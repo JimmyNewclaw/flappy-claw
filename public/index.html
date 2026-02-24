@@ -27,8 +27,13 @@
       position: fixed; left: 50%; top: max(10px, env(safe-area-inset-top)); transform: translateX(-50%);
       text-align: center; pointer-events: none; z-index: 10; text-shadow: 0 3px 10px rgba(0,0,0,0.35);
     }
-    .score { font-size: clamp(1.4rem, 4vw, 2.1rem); font-weight: 900; transition: transform 120ms ease; }
-    .score.pop { transform: scale(1.15); }
+    .score { font-size: clamp(1.4rem, 4vw, 2.1rem); font-weight: 900; }
+    @keyframes scorePopAnim {
+      0% { transform: scale(1); }
+      45% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+    .score.pop { animation: scorePopAnim 200ms ease; }
     .rank { margin-top: 2px; font-size: clamp(0.9rem, 2.6vw, 1.05rem); color: #c9d4ff; font-weight: 700; }
 
     .flash {
@@ -90,6 +95,21 @@
 
     .statusMini { margin-top: 8px; font-size: .82rem; color: #aeb8d9; }
 
+    .muteBtn {
+      position: fixed;
+      right: 12px;
+      top: max(10px, env(safe-area-inset-top));
+      z-index: 30;
+      border: 1px solid var(--border);
+      background: rgba(10, 14, 30, 0.72);
+      color: #fff;
+      border-radius: 10px;
+      width: 42px;
+      height: 42px;
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+
     @media (min-width: 680px) {
       .btnRow.two { grid-template-columns: 1fr 1fr; }
       .nameRow { grid-template-columns: 1fr auto; }
@@ -98,6 +118,7 @@
 </head>
 <body>
   <div id="gameWrap"><canvas id="game"></canvas></div>
+  <button id="muteBtn" class="muteBtn" aria-label="Toggle sound">🔊</button>
 
   <div class="hud" aria-live="polite">
     <div class="score" id="scoreLabel">0 updates survived</div>
@@ -168,6 +189,7 @@
     const playerName = document.getElementById('playerName');
     const submitScoreBtn = document.getElementById('submitScoreBtn');
     const submitStatus = document.getElementById('submitStatus');
+    const muteBtn = document.getElementById('muteBtn');
 
     let lastSubmittedId = null;
 
@@ -192,11 +214,79 @@
     const game = {
       state: 'start', w: 0, h: 0, dpr: 1, lastTime: 0,
       score: 0, speed: 180, spawnTimer: 0, spawnEvery: 1.45,
-      deathMessage: '', lobster: null, obstacles: [],
+      deathMessage: '', lobster: null, obstacles: [], particles: [],
+      shakeTime: 0, shakeX: 0, shakeY: 0,
       tweets: [ { speed: 28, alpha: 0.2, spawn: 0, items: [] }, { speed: 42, alpha: 0.25, spawn: 0.4, items: [] }, { speed: 58, alpha: 0.3, spawn: 0.8, items: [] } ]
     };
 
     const randomPick = (arr) => arr[(Math.random() * arr.length) | 0];
+
+    let isMuted = localStorage.getItem('flappyClawMuted') === '1' ? true : false;
+    let audioCtx = null;
+
+    function updateMuteUi() {
+      muteBtn.textContent = isMuted ? '🔇' : '🔊';
+    }
+
+    function ensureAudio() {
+      if (!audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        audioCtx = new AC();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function tone(freq, duration, type = 'sine', startOffset = 0, gain = 0.06) {
+      if (isMuted) return;
+      const ac = ensureAudio();
+      if (!ac) return;
+      const t0 = ac.currentTime + startOffset;
+      const osc = ac.createOscillator();
+      const g = ac.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, t0);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(gain, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+      osc.connect(g).connect(ac.destination);
+      osc.start(t0);
+      osc.stop(t0 + duration + 0.02);
+    }
+
+    function playFlapSound() {
+      tone(900, 0.05, 'triangle', 0, 0.045);
+    }
+
+    function playPassSound() {
+      tone(560, 0.08, 'square', 0, 0.05);
+      tone(820, 0.1, 'triangle', 0.07, 0.06);
+    }
+
+    function playDeathSound() {
+      if (isMuted) return;
+      const ac = ensureAudio();
+      if (!ac) return;
+      const t0 = ac.currentTime;
+      const osc = ac.createOscillator();
+      const g = ac.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(520, t0);
+      osc.frequency.exponentialRampToValueAtTime(220, t0 + 0.3);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.08, t0 + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.3);
+      osc.connect(g).connect(ac.destination);
+      osc.start(t0);
+      osc.stop(t0 + 0.32);
+    }
+
+    function playMilestoneSound() {
+      tone(523, 0.14, 'triangle', 0, 0.05);
+      tone(659, 0.14, 'triangle', 0.02, 0.05);
+      tone(783, 0.16, 'triangle', 0.04, 0.05);
+    }
 
     function escapeHtml(str) {
       return String(str || '').replace(/[&<>'"]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m]));
@@ -278,6 +368,7 @@
 
     function resetRun() {
       game.score = 0; game.speed = 180; game.spawnTimer = 0; game.obstacles = []; game.deathMessage = '';
+      game.particles = []; game.shakeTime = 0; game.shakeX = 0; game.shakeY = 0;
       game.lobster.vy = 0; game.lobster.y = game.h * 0.46; game.lobster.rot = 0;
       for (const layer of game.tweets) { layer.items = []; layer.spawn = Math.random(); }
       updateHud();
@@ -291,6 +382,8 @@
     function killGame() {
       if (game.state !== 'playing') return;
       game.state = 'dead'; game.deathMessage = randomPick(deathMessages);
+      game.shakeTime = 0.2;
+      playDeathSound();
       deathScore.textContent = `You survived ${game.score} updates`;
       deathRank.textContent = `Rank: ${getRank(game.score)}`;
       deathMsg.textContent = game.deathMessage;
@@ -303,10 +396,11 @@
       if (game.state === 'start') startGame();
       if (game.state !== 'playing') return;
       game.lobster.vy = -340; game.lobster.rot = -0.38;
+      playFlapSound();
     }
 
     function updateHud() { scoreLabel.textContent = `${game.score} updates survived`; rankLabel.textContent = getRank(game.score); }
-    function scorePop() { scoreLabel.classList.add('pop'); setTimeout(() => scoreLabel.classList.remove('pop'), 130); }
+    function scorePop() { scoreLabel.classList.remove('pop'); void scoreLabel.offsetWidth; scoreLabel.classList.add('pop'); setTimeout(() => scoreLabel.classList.remove('pop'), 210); }
     function showFlash(text) { flashMsg.textContent = text; flashMsg.classList.add('show'); setTimeout(() => flashMsg.classList.remove('show'), 900); }
 
     function makeObstacle() {
@@ -315,6 +409,22 @@
       const margin = Math.max(70, game.h * 0.12);
       const topH = margin + Math.random() * (game.h - gap - margin * 2);
       return { x: game.w + 16, w: pipeWidth, topH, gap, passed: false, label: randomPick(obstacleLabels) };
+    }
+
+    function spawnPassParticles(x, y) {
+      const count = 8 + ((Math.random() * 5) | 0);
+      for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const speed = 70 + Math.random() * 120;
+        game.particles.push({
+          x, y,
+          vx: Math.cos(a) * speed,
+          vy: Math.sin(a) * speed,
+          life: 0.5,
+          size: 2 + Math.random() * 4,
+          color: randomPick(['#ffd447', '#ff8a5b', '#77d8ff', '#ffffff'])
+        });
+      }
     }
 
     function makeTweet() {
@@ -336,7 +446,26 @@
     }
 
     function update(dt) {
-      updateTweets(dt);
+      if (game.state !== 'dead' || game.shakeTime > 0) updateTweets(dt);
+
+      if (game.shakeTime > 0) {
+        game.shakeTime = Math.max(0, game.shakeTime - dt);
+        game.shakeX = (Math.random() * 8 - 4);
+        game.shakeY = (Math.random() * 8 - 4);
+      } else {
+        game.shakeX = 0;
+        game.shakeY = 0;
+      }
+
+      for (let i = game.particles.length - 1; i >= 0; i--) {
+        const p = game.particles[i];
+        p.life -= dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 200 * dt;
+        if (p.life <= 0) game.particles.splice(i, 1);
+      }
+
       if (game.state === 'start') { game.lobster.bob += dt * 2.2; return; }
       if (game.state !== 'playing') return;
 
@@ -355,7 +484,12 @@
         const o = game.obstacles[i]; o.x -= game.speed * dt;
         if (!o.passed && o.x + o.w < game.lobster.x - 18) {
           o.passed = true; game.score += 1; updateHud(); scorePop();
-          if (game.score % 10 === 0) game.speed += 10;
+          spawnPassParticles(game.lobster.x, game.lobster.y);
+          playPassSound();
+          if (game.score % 10 === 0) {
+            game.speed += 10;
+            playMilestoneSound();
+          }
           if (game.score === 69) showFlash('Nice.');
           if (game.score === 42) showFlash('The answer.');
         }
@@ -428,7 +562,27 @@
       ctx.restore();
     }
 
-    function draw() { drawBackground(); for (const o of game.obstacles) drawObstacle(o); drawLobster(); }
+    function drawParticles() {
+      for (const p of game.particles) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.life / 0.5);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function draw() {
+      ctx.save();
+      ctx.translate(game.shakeX, game.shakeY);
+      drawBackground();
+      for (const o of game.obstacles) drawObstacle(o);
+      drawParticles();
+      drawLobster();
+      ctx.restore();
+    }
 
     function frame(ts) {
       if (!game.lastTime) game.lastTime = ts;
@@ -440,10 +594,14 @@
 
     window.addEventListener('resize', resize);
     window.addEventListener('keydown', (e) => {
-      if (e.code === 'Space') { e.preventDefault(); if (game.state !== 'dead') onPrimaryInput(); }
+      if (e.code === 'Space') { e.preventDefault(); ensureAudio(); if (game.state !== 'dead') onPrimaryInput(); }
       if (e.code === 'Enter' && game.state === 'dead') startGame();
     }, { passive: false });
-    window.addEventListener('pointerdown', (e) => { if (e.target.closest('button,input')) return; if (game.state !== 'dead') onPrimaryInput(); });
+    window.addEventListener('pointerdown', (e) => {
+      if (!e.target.closest('#muteBtn')) ensureAudio();
+      if (e.target.closest('button,input')) return;
+      if (game.state !== 'dead') onPrimaryInput();
+    });
 
     retryBtn.addEventListener('click', startGame);
     shareBtn.addEventListener('click', async () => {
@@ -460,6 +618,14 @@
 
     submitScoreBtn.addEventListener('click', submitScore);
 
+    muteBtn.addEventListener('click', () => {
+      isMuted = !isMuted;
+      localStorage.setItem('flappyClawMuted', isMuted ? '1' : '0');
+      updateMuteUi();
+      if (!isMuted) ensureAudio();
+    });
+
+    updateMuteUi();
     resize();
     updateHud();
     refreshLeaderboards();
