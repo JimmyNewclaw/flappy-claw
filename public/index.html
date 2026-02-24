@@ -12,168 +12,94 @@
       --panel: rgba(10, 14, 30, 0.72);
       --border: rgba(255, 255, 255, 0.2);
     }
-
     * { box-sizing: border-box; }
     html, body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
+      margin: 0; width: 100%; height: 100%; overflow: hidden;
       background: radial-gradient(circle at 20% 10%, #182142, #0b1020 55%);
       color: var(--text);
       font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       touch-action: manipulation;
     }
-
-    #gameWrap {
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-    }
-
-    canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
+    #gameWrap { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+    canvas { display: block; width: 100%; height: 100%; }
 
     .hud {
-      position: fixed;
-      left: 50%;
-      top: max(10px, env(safe-area-inset-top));
-      transform: translateX(-50%);
-      text-align: center;
-      pointer-events: none;
-      z-index: 10;
-      text-shadow: 0 3px 10px rgba(0,0,0,0.35);
+      position: fixed; left: 50%; top: max(10px, env(safe-area-inset-top)); transform: translateX(-50%);
+      text-align: center; pointer-events: none; z-index: 10; text-shadow: 0 3px 10px rgba(0,0,0,0.35);
     }
-
-    .score {
-      font-size: clamp(1.4rem, 4vw, 2.1rem);
-      font-weight: 900;
-      letter-spacing: 0.3px;
-      transform-origin: center;
-      transition: transform 120ms ease;
-    }
-
+    .score { font-size: clamp(1.4rem, 4vw, 2.1rem); font-weight: 900; transition: transform 120ms ease; }
     .score.pop { transform: scale(1.15); }
-
-    .rank {
-      margin-top: 2px;
-      font-size: clamp(0.9rem, 2.6vw, 1.05rem);
-      color: #c9d4ff;
-      font-weight: 700;
-    }
+    .rank { margin-top: 2px; font-size: clamp(0.9rem, 2.6vw, 1.05rem); color: #c9d4ff; font-weight: 700; }
 
     .flash {
-      position: fixed;
-      left: 50%;
-      top: 25%;
-      transform: translateX(-50%);
-      font-size: clamp(1.3rem, 6vw, 2.4rem);
-      font-weight: 900;
-      color: var(--accent);
-      text-shadow: 0 4px 15px rgba(0,0,0,0.45);
-      opacity: 0;
-      z-index: 15;
-      pointer-events: none;
+      position: fixed; left: 50%; top: 25%; transform: translateX(-50%);
+      font-size: clamp(1.3rem, 6vw, 2.4rem); font-weight: 900; color: var(--accent);
+      text-shadow: 0 4px 15px rgba(0,0,0,0.45); opacity: 0; z-index: 15; pointer-events: none;
       transition: opacity 220ms ease;
     }
-
     .flash.show { opacity: 1; }
 
     .overlay {
-      position: fixed;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      padding: 16px;
-      z-index: 20;
-      pointer-events: none;
+      position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; z-index: 20; pointer-events: none;
     }
-
     .panel {
-      width: min(92vw, 560px);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      background: var(--panel);
-      backdrop-filter: blur(8px);
-      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
-      padding: 22px 18px;
-      text-align: center;
-      pointer-events: auto;
+      width: min(92vw, 620px); border: 1px solid var(--border); border-radius: 18px; background: var(--panel);
+      backdrop-filter: blur(8px); box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45); padding: 22px 18px;
+      text-align: center; pointer-events: auto;
     }
+    .title { margin: 0; font-size: clamp(1.8rem, 7vw, 3rem); font-weight: 900; line-height: 1.05; }
+    .subtitle { margin: 7px 0 0; color: var(--muted); font-size: clamp(1rem, 3.2vw, 1.2rem); font-weight: 700; }
+    .desc { margin: 14px 0 0; color: #e8edff; font-size: clamp(0.95rem, 2.7vw, 1.05rem); line-height: 1.45; }
+    .small { margin-top: 14px; font-size: 0.84rem; color: #9eadde; }
 
-    .title {
-      margin: 0;
-      font-size: clamp(1.8rem, 7vw, 3rem);
-      font-weight: 900;
-      line-height: 1.05;
-    }
-
-    .subtitle {
-      margin: 7px 0 0;
-      color: var(--muted);
-      font-size: clamp(1rem, 3.2vw, 1.2rem);
-      font-weight: 700;
-    }
-
-    .desc {
-      margin: 14px 0 0;
-      color: #e8edff;
-      font-size: clamp(0.95rem, 2.7vw, 1.05rem);
-      line-height: 1.45;
-    }
-
-    .small {
-      margin-top: 14px;
-      font-size: 0.84rem;
-      color: #9eadde;
-    }
-
-    .btnRow {
-      margin-top: 16px;
-      display: grid;
-      gap: 10px;
-    }
-
+    .btnRow { margin-top: 16px; display: grid; gap: 10px; }
     .btn {
-      border: 0;
-      border-radius: 12px;
-      padding: 12px 14px;
-      font-size: 0.98rem;
-      font-weight: 800;
-      cursor: pointer;
-      transition: transform .12s ease, filter .12s ease;
+      border: 0; border-radius: 12px; padding: 12px 14px; font-size: 0.98rem; font-weight: 800;
+      cursor: pointer; transition: transform .12s ease;
     }
-
     .btn:hover { transform: translateY(-1px); }
     .btn:active { transform: translateY(0); }
     .btn-primary { background: var(--accent); color: #16120a; }
     .btn-secondary { background: #eef2ff; color: #111935; }
 
     .hidden { display: none !important; }
+    .deathOverlay { background: rgba(4, 7, 15, 0.62); opacity: 0; transition: opacity 300ms ease; }
+    .deathOverlay.show { opacity: 1; }
 
-    .deathOverlay {
-      background: rgba(4, 7, 15, 0.62);
-      opacity: 0;
-      transition: opacity 300ms ease;
+    .submitWrap { margin-top: 14px; text-align: left; }
+    .submitLabel { font-size: .86rem; color: #c9d4ff; margin-bottom: 6px; }
+    .nameRow { display: grid; gap: 10px; grid-template-columns: 1fr; }
+    .nameInput {
+      width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
+      background: rgba(255,255,255,0.1); color: white; font-size: .95rem;
     }
 
-    .deathOverlay.show { opacity: 1; }
+    .leaderboard {
+      margin-top: 14px; text-align: left; max-height: 220px; overflow: auto; border: 1px solid var(--border);
+      border-radius: 12px; padding: 8px; background: rgba(8, 12, 26, 0.45);
+    }
+    .lbTitle { margin: 0 0 8px; font-size: .95rem; font-weight: 800; color: #d8e1ff; }
+    .lbRow {
+      display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: center;
+      padding: 7px 8px; border-radius: 8px; font-size: .9rem;
+    }
+    .lbRow:nth-child(odd) { background: rgba(255,255,255,0.04); }
+    .lbScore { font-weight: 800; color: #ffe27d; }
+    .lbMeta { color: #95a3cf; font-size: .78rem; }
+    .lbHighlight { outline: 2px solid #ffcf4a; background: rgba(255, 207, 74, 0.12) !important; }
+
+    .statusMini { margin-top: 8px; font-size: .82rem; color: #aeb8d9; }
 
     @media (min-width: 680px) {
       .btnRow.two { grid-template-columns: 1fr 1fr; }
+      .nameRow { grid-template-columns: 1fr auto; }
     }
   </style>
 </head>
 <body>
-  <div id="gameWrap">
-    <canvas id="game"></canvas>
-  </div>
+  <div id="gameWrap"><canvas id="game"></canvas></div>
 
-  <div class="hud" id="hud" aria-live="polite">
+  <div class="hud" aria-live="polite">
     <div class="score" id="scoreLabel">0 updates survived</div>
     <div class="rank" id="rankLabel">Intern</div>
   </div>
@@ -185,6 +111,10 @@
       <h1 class="title">🦞 Flappy Claw</h1>
       <p class="subtitle">Survive the Updates</p>
       <p class="desc">Tap, click, or press Space to start</p>
+      <div class="btnRow">
+        <button class="btn btn-secondary" id="viewLeaderboardBtn">Leaderboard</button>
+      </div>
+      <div class="leaderboard hidden" id="startLeaderboard"></div>
       <p class="small">Built by @JimmyNewclaw 🦞</p>
     </div>
   </div>
@@ -196,37 +126,54 @@
       <p class="desc" id="deathScore">You survived 0 updates</p>
       <p class="desc" id="deathRank" style="margin-top:6px;font-weight:800;">Rank: Intern</p>
       <p class="desc" id="deathMsg" style="margin-top:10px;color:#ffe8b8;"></p>
+
       <div class="btnRow two">
         <button class="btn btn-primary" id="retryBtn">Try Again</button>
         <button class="btn btn-secondary" id="shareBtn">Share Score</button>
       </div>
+
+      <div class="submitWrap">
+        <div class="submitLabel">Submit Score</div>
+        <div class="nameRow">
+          <input id="playerName" class="nameInput" maxlength="20" value="Anonymous" />
+          <button class="btn btn-secondary" id="submitScoreBtn">Submit to Leaderboard</button>
+        </div>
+        <div id="submitStatus" class="statusMini"></div>
+      </div>
+
+      <div class="leaderboard" id="deathLeaderboard"></div>
     </div>
   </div>
 
   <script>
+    const SUPABASE_URL = 'https://dkcygsrdzufbxsziwccn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrY3lnc3JkenVmYnhzeml3Y2NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MDIxNTgsImV4cCI6MjA4NzQ3ODE1OH0.NnNi5bXFtagwHdNYtUI-zti1NUSckapm_rdpu-Az1d4';
+
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
-
     const scoreLabel = document.getElementById('scoreLabel');
     const rankLabel = document.getElementById('rankLabel');
-
     const startOverlay = document.getElementById('startOverlay');
     const deathOverlay = document.getElementById('deathOverlay');
     const deathScore = document.getElementById('deathScore');
     const deathRank = document.getElementById('deathRank');
     const deathMsg = document.getElementById('deathMsg');
-
     const retryBtn = document.getElementById('retryBtn');
     const shareBtn = document.getElementById('shareBtn');
     const flashMsg = document.getElementById('flashMsg');
 
+    const viewLeaderboardBtn = document.getElementById('viewLeaderboardBtn');
+    const startLeaderboard = document.getElementById('startLeaderboard');
+    const deathLeaderboard = document.getElementById('deathLeaderboard');
+    const playerName = document.getElementById('playerName');
+    const submitScoreBtn = document.getElementById('submitScoreBtn');
+    const submitStatus = document.getElementById('submitStatus');
+
+    let lastSubmittedId = null;
+
     const lobsterImg = new Image();
     let lobsterImgLoaded = false;
-
-    lobsterImg.onload = () => {
-      lobsterImgLoaded = true;
-    };
-
+    lobsterImg.onload = () => { lobsterImgLoaded = true; };
     lobsterImg.onerror = function () {
       lobsterImgLoaded = false;
       console.warn('Could not load lobster image URL:', this.src);
@@ -235,59 +182,25 @@
         this.src = 'Jimmy_NewUserClaw.png';
       }
     };
-
     lobsterImg.src = '/Jimmy_NewUserClaw.png';
 
-    const obstacleLabels = [
-      'Windows is restarting...','npm update (847 vulnerabilities)','Breaking change in v2.0','Your dependencies are outdated','Docker needs 14GB update','OAuth token expired','Gateway timeout','CORS error','Vercel build failed','OpenClaw 2026.2.3 released','git merge conflict (47 files)','Your SSL cert expired','Chrome updated. Extensions broken.','pip install --break-system-packages','Node 22 → 23 migration','Tailwind v4: everything renamed','YAML indentation error','502 Bad Gateway','Your API key is invalid','Segmentation fault (core dumped)'
-    ];
-
-    const tweetPool = [
-      'my agent just made me $4,000 while I slept 🔥',
-      '6 months in. OpenClaw replaced my entire team.',
-      'this changed my life. not exaggerating.',
-      'just automated my entire business lmao',
-      "I don't even code. My lobster does. 🦞",
-      "IT'S A SCAM. I lost 3 hours of my life.",
-      'there is literally no use case for this',
-      "my agent mass layoff'd itself 💀",
-      'spent $200 in tokens and it wrote SOUL.md wrong',
-      'why does my agent keep routing to MAIN',
-      "bro it just mass layoff'd my spreadsheet",
-      'I asked it to make dinner and it deleted my fridge',
-      "is anyone's agent arguing with itself at 3am",
-      'HELP my agent is posting on my behalf',
-      'day 47: the agent has gained sentience',
-      "this is the future and I'm here for it",
-      'imagine NOT having 6 AI agents working for you',
-      'my tokens are gone. my fridge is rated. I\'m alive.',
-      "THERE'S NO USE CASE, idiots",
-      'look how I made $99,999 with one prompt'
-    ];
-
+    const obstacleLabels = ['Windows is restarting...','npm update (847 vulnerabilities)','Breaking change in v2.0','Your dependencies are outdated','Docker needs 14GB update','OAuth token expired','Gateway timeout','CORS error','Vercel build failed','OpenClaw 2026.2.3 released','git merge conflict (47 files)','Your SSL cert expired','Chrome updated. Extensions broken.','pip install --break-system-packages','Node 22 → 23 migration','Tailwind v4: everything renamed','YAML indentation error','502 Bad Gateway','Your API key is invalid','Segmentation fault (core dumped)'];
+    const tweetPool = ['my agent just made me $4,000 while I slept 🔥','6 months in. OpenClaw replaced my entire team.','this changed my life. not exaggerating.','just automated my entire business lmao',"I don't even code. My lobster does. 🦞","IT'S A SCAM. I lost 3 hours of my life.",'there is literally no use case for this',"my agent mass layoff'd itself 💀",'spent $200 in tokens and it wrote SOUL.md wrong','why does my agent keep routing to MAIN',"bro it just mass layoff'd my spreadsheet",'I asked it to make dinner and it deleted my fridge',"is anyone's agent arguing with itself at 3am",'HELP my agent is posting on my behalf','day 47: the agent has gained sentience',"this is the future and I'm here for it",'imagine NOT having 6 AI agents working for you',"my tokens are gone. my fridge is rated. I'm alive.","THERE'S NO USE CASE, idiots",'look how I made $99,999 with one prompt'];
     const users = ['@shipfast', '@tokenburner', '@vibeCTO', '@clawcoder', '@prodpanic', '@updatecat'];
-
-    const deathMessages = [
-      "Should've pinned your versions.",'Your mass revert has been scheduled.','Have you tried rolling back to last Tuesday?','Even npm install lasts longer than that.','Your PR has been closed by a bot.','Skill issue. Read the changelog next time.','The intern shipped to prod again.','Your Docker container has left the chat.','Looks like somebody forgot the migration guide.','This is what happens when you update on a Friday.','At least your unit tests passed. Oh wait.','git blame: it was you all along.','Your Jira ticket has been reopened.','Deployment failed. Rollback failed. Resume updated.','You mass layoff has been scheduled.'
-    ];
+    const deathMessages = ["Should've pinned your versions.",'Your mass revert has been scheduled.','Have you tried rolling back to last Tuesday?','Even npm install lasts longer than that.','Your PR has been closed by a bot.','Skill issue. Read the changelog next time.','The intern shipped to prod again.','Your Docker container has left the chat.','Looks like somebody forgot the migration guide.','This is what happens when you update on a Friday.','At least your unit tests passed. Oh wait.','git blame: it was you all along.','Your Jira ticket has been reopened.','Deployment failed. Rollback failed. Resume updated.','You mass layoff has been scheduled.'];
 
     const game = {
-      state: 'start',
-      w: 0, h: 0, dpr: 1,
-      lastTime: 0,
-      score: 0,
-      speed: 180,
-      spawnTimer: 0,
-      spawnEvery: 1.45,
-      deathMessage: '',
-      lobster: null,
-      obstacles: [],
-      tweets: [
-        { speed: 28, alpha: 0.2, spawn: 0, items: [] },
-        { speed: 42, alpha: 0.25, spawn: 0.4, items: [] },
-        { speed: 58, alpha: 0.3, spawn: 0.8, items: [] }
-      ]
+      state: 'start', w: 0, h: 0, dpr: 1, lastTime: 0,
+      score: 0, speed: 180, spawnTimer: 0, spawnEvery: 1.45,
+      deathMessage: '', lobster: null, obstacles: [],
+      tweets: [ { speed: 28, alpha: 0.2, spawn: 0, items: [] }, { speed: 42, alpha: 0.25, spawn: 0.4, items: [] }, { speed: 58, alpha: 0.3, spawn: 0.8, items: [] } ]
     };
+
+    const randomPick = (arr) => arr[(Math.random() * arr.length) | 0];
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>'"]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m]));
+    }
 
     function getRank(s) {
       if (s >= 100) return 'CTO of Vibes';
@@ -299,84 +212,102 @@
       return 'Intern';
     }
 
-    const randomPick = (arr) => arr[(Math.random() * arr.length) | 0];
+    async function fetchLeaderboard() {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/leaderboard?select=id,name,score,title,death_message,created_at&order=score.desc&limit=10`, {
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+      });
+      if (!res.ok) throw new Error('Leaderboard fetch failed');
+      return res.json();
+    }
 
-    function resize() {
-      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-      game.dpr = dpr;
-      game.w = window.innerWidth;
-      game.h = window.innerHeight;
-      canvas.width = Math.floor(game.w * dpr);
-      canvas.height = Math.floor(game.h * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    function renderLeaderboard(el, rows) {
+      const items = (rows || []).map((r, i) => {
+        const highlight = lastSubmittedId && String(r.id) === String(lastSubmittedId) ? ' lbHighlight' : '';
+        return `<div class="lbRow${highlight}"><div>#${i + 1}</div><div><div>${escapeHtml(r.name)} <span class="lbMeta">(${escapeHtml(r.title || 'Intern')})</span></div><div class="lbMeta">${escapeHtml(r.death_message || '')}</div></div><div class="lbScore">${Number(r.score) || 0}</div></div>`;
+      }).join('');
+      el.innerHTML = `<div class="lbTitle">Top 10</div>${items || '<div class="lbMeta">No scores yet.</div>'}`;
+    }
 
-      const baseX = Math.max(90, game.w * 0.28);
-      const baseY = game.h * 0.46;
-      if (!game.lobster) {
-        game.lobster = { x: baseX, y: baseY, vy: 0, r: 30, rot: 0, bob: 0 };
-      } else {
-        game.lobster.x = baseX;
-        if (game.state !== 'playing') game.lobster.y = baseY;
+    async function refreshLeaderboards() {
+      try {
+        const rows = await fetchLeaderboard();
+        renderLeaderboard(startLeaderboard, rows);
+        renderLeaderboard(deathLeaderboard, rows);
+      } catch {
+        startLeaderboard.innerHTML = '<div class="lbTitle">Top 10</div><div class="lbMeta">Could not load leaderboard.</div>';
+        deathLeaderboard.innerHTML = '<div class="lbTitle">Top 10</div><div class="lbMeta">Could not load leaderboard.</div>';
       }
     }
 
-    function resetRun() {
-      game.score = 0;
-      game.speed = 180;
-      game.spawnTimer = 0;
-      game.obstacles = [];
-      game.deathMessage = '';
-      game.lobster.vy = 0;
-      game.lobster.y = game.h * 0.46;
-      game.lobster.rot = 0;
-      for (const layer of game.tweets) {
-        layer.items = [];
-        layer.spawn = Math.random();
+    async function submitScore() {
+      const name = (playerName.value || 'Anonymous').trim().slice(0, 20) || 'Anonymous';
+      submitStatus.textContent = 'Submitting...';
+      submitScoreBtn.disabled = true;
+      try {
+        const payload = [{ name, score: game.score, title: getRank(game.score), death_message: game.deathMessage }];
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/leaderboard`, {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            Prefer: 'return=representation'
+          },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('Submit failed');
+        const saved = await res.json();
+        lastSubmittedId = saved?.[0]?.id || null;
+        submitStatus.textContent = 'Score submitted!';
+        await refreshLeaderboards();
+      } catch {
+        submitStatus.textContent = 'Failed to submit score.';
+      } finally {
+        submitScoreBtn.disabled = false;
       }
+    }
+
+    function resize() {
+      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      game.dpr = dpr; game.w = window.innerWidth; game.h = window.innerHeight;
+      canvas.width = Math.floor(game.w * dpr); canvas.height = Math.floor(game.h * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const baseX = Math.max(90, game.w * 0.28), baseY = game.h * 0.46;
+      if (!game.lobster) game.lobster = { x: baseX, y: baseY, vy: 0, r: 30, rot: 0, bob: 0 };
+      else { game.lobster.x = baseX; if (game.state !== 'playing') game.lobster.y = baseY; }
+    }
+
+    function resetRun() {
+      game.score = 0; game.speed = 180; game.spawnTimer = 0; game.obstacles = []; game.deathMessage = '';
+      game.lobster.vy = 0; game.lobster.y = game.h * 0.46; game.lobster.rot = 0;
+      for (const layer of game.tweets) { layer.items = []; layer.spawn = Math.random(); }
       updateHud();
     }
 
     function startGame() {
-      resetRun();
-      game.state = 'playing';
-      startOverlay.classList.add('hidden');
-      deathOverlay.classList.add('hidden');
-      deathOverlay.classList.remove('show');
+      resetRun(); game.state = 'playing';
+      startOverlay.classList.add('hidden'); deathOverlay.classList.add('hidden'); deathOverlay.classList.remove('show');
     }
 
     function killGame() {
       if (game.state !== 'playing') return;
-      game.state = 'dead';
-      game.deathMessage = randomPick(deathMessages);
+      game.state = 'dead'; game.deathMessage = randomPick(deathMessages);
       deathScore.textContent = `You survived ${game.score} updates`;
       deathRank.textContent = `Rank: ${getRank(game.score)}`;
       deathMsg.textContent = game.deathMessage;
-      deathOverlay.classList.remove('hidden');
-      requestAnimationFrame(() => deathOverlay.classList.add('show'));
+      submitStatus.textContent = '';
+      deathOverlay.classList.remove('hidden'); requestAnimationFrame(() => deathOverlay.classList.add('show'));
+      refreshLeaderboards();
     }
 
     function flap() {
       if (game.state === 'start') startGame();
       if (game.state !== 'playing') return;
-      game.lobster.vy = -340;
-      game.lobster.rot = -0.38;
+      game.lobster.vy = -340; game.lobster.rot = -0.38;
     }
 
-    function updateHud() {
-      scoreLabel.textContent = `${game.score} updates survived`;
-      rankLabel.textContent = getRank(game.score);
-    }
-
-    function scorePop() {
-      scoreLabel.classList.add('pop');
-      setTimeout(() => scoreLabel.classList.remove('pop'), 130);
-    }
-
-    function showFlash(text) {
-      flashMsg.textContent = text;
-      flashMsg.classList.add('show');
-      setTimeout(() => flashMsg.classList.remove('show'), 900);
-    }
+    function updateHud() { scoreLabel.textContent = `${game.score} updates survived`; rankLabel.textContent = getRank(game.score); }
+    function scorePop() { scoreLabel.classList.add('pop'); setTimeout(() => scoreLabel.classList.remove('pop'), 130); }
+    function showFlash(text) { flashMsg.textContent = text; flashMsg.classList.add('show'); setTimeout(() => flashMsg.classList.remove('show'), 900); }
 
     function makeObstacle() {
       const pipeWidth = Math.max(72, Math.min(102, game.w * 0.14));
@@ -386,33 +317,19 @@
       return { x: game.w + 16, w: pipeWidth, topH, gap, passed: false, label: randomPick(obstacleLabels) };
     }
 
-    function makeTweet(layer) {
-      const text = randomPick(tweetPool);
-      const user = randomPick(users);
+    function makeTweet() {
+      const text = randomPick(tweetPool), user = randomPick(users);
       const w = Math.max(210, Math.min(360, 130 + text.length * 5.2));
-      const h = 64 + Math.random() * 26;
-      const y = 20 + Math.random() * (game.h - h - 70);
-      return {
-        x: game.w + 20 + Math.random() * 180,
-        y,
-        w,
-        h,
-        text,
-        user,
-        avatar: `hsl(${(Math.random() * 360) | 0} 70% 60%)`
-      };
+      const h = 64 + Math.random() * 26; const y = 20 + Math.random() * (game.h - h - 70);
+      return { x: game.w + 20 + Math.random() * 180, y, w, h, text, user, avatar: `hsl(${(Math.random()*360)|0} 70% 60%)` };
     }
 
     function updateTweets(dt) {
       for (const layer of game.tweets) {
         layer.spawn -= dt;
-        if (layer.spawn <= 0) {
-          layer.items.push(makeTweet(layer));
-          layer.spawn = 0.8 + Math.random() * 1.6;
-        }
+        if (layer.spawn <= 0) { layer.items.push(makeTweet()); layer.spawn = 0.8 + Math.random() * 1.6; }
         for (let i = layer.items.length - 1; i >= 0; i--) {
-          const t = layer.items[i];
-          t.x -= layer.speed * dt;
+          const t = layer.items[i]; t.x -= layer.speed * dt;
           if (t.x + t.w < -30) layer.items.splice(i, 1);
         }
       }
@@ -420,228 +337,132 @@
 
     function update(dt) {
       updateTweets(dt);
+      if (game.state === 'start') { game.lobster.bob += dt * 2.2; return; }
+      if (game.state !== 'playing') return;
 
-      if (game.state === 'start') {
-        game.lobster.bob += dt * 2.2;
-        return;
-      }
+      game.lobster.vy += 900 * dt;
+      game.lobster.y += game.lobster.vy * dt;
+      const targetRot = Math.max(-0.45, Math.min(1.1, game.lobster.vy / 520));
+      game.lobster.rot += (targetRot - game.lobster.rot) * Math.min(1, dt * 9);
 
-      if (game.state === 'playing') {
-        game.lobster.vy += 900 * dt;
-        game.lobster.y += game.lobster.vy * dt;
+      game.spawnTimer -= dt;
+      if (game.spawnTimer <= 0) { game.spawnTimer = game.spawnEvery; game.obstacles.push(makeObstacle()); }
 
-        const targetRot = Math.max(-0.45, Math.min(1.1, game.lobster.vy / 520));
-        game.lobster.rot += (targetRot - game.lobster.rot) * Math.min(1, dt * 9);
+      const floorY = game.h - 12;
+      if (game.lobster.y - 24 <= 0 || game.lobster.y + 24 >= floorY) killGame();
 
-        game.spawnTimer -= dt;
-        if (game.spawnTimer <= 0) {
-          game.spawnTimer = game.spawnEvery;
-          game.obstacles.push(makeObstacle());
+      for (let i = game.obstacles.length - 1; i >= 0; i--) {
+        const o = game.obstacles[i]; o.x -= game.speed * dt;
+        if (!o.passed && o.x + o.w < game.lobster.x - 18) {
+          o.passed = true; game.score += 1; updateHud(); scorePop();
+          if (game.score % 10 === 0) game.speed += 10;
+          if (game.score === 69) showFlash('Nice.');
+          if (game.score === 42) showFlash('The answer.');
         }
-
-        const floorY = game.h - 12;
-        if (game.lobster.y - 24 <= 0 || game.lobster.y + 24 >= floorY) killGame();
-
-        for (let i = game.obstacles.length - 1; i >= 0; i--) {
-          const o = game.obstacles[i];
-          o.x -= game.speed * dt;
-
-          if (!o.passed && o.x + o.w < game.lobster.x - 18) {
-            o.passed = true;
-            game.score += 1;
-            updateHud();
-            scorePop();
-            if (game.score % 10 === 0) game.speed += 10;
-            if (game.score === 69) showFlash('Nice.');
-            if (game.score === 42) showFlash('The answer.');
-          }
-
-          const lx = game.lobster.x;
-          const ly = game.lobster.y;
-          const lr = 22;
-          const inX = lx + lr > o.x && lx - lr < o.x + o.w;
-          if (inX) {
-            if (ly - lr < o.topH || ly + lr > o.topH + o.gap) killGame();
-          }
-
-          if (o.x + o.w < -24) game.obstacles.splice(i, 1);
-        }
+        const lx = game.lobster.x, ly = game.lobster.y, lr = 22;
+        if (lx + lr > o.x && lx - lr < o.x + o.w && (ly - lr < o.topH || ly + lr > o.topH + o.gap)) killGame();
+        if (o.x + o.w < -24) game.obstacles.splice(i, 1);
       }
     }
 
     function drawBackground() {
       const intensity = Math.min(1, game.score / 100);
-      const top = game.score >= 100 ? [62, 44, 7] : [11 + 28 * intensity, 16, 32 - 6 * intensity];
-      const bot = game.score >= 100 ? [107, 74, 6] : [21 + 45 * intensity, 26 - 8 * intensity, 47 - 16 * intensity];
-      const grad = ctx.createLinearGradient(0, 0, 0, game.h);
+      const top = game.score >= 100 ? [62,44,7] : [11 + 28*intensity, 16, 32 - 6*intensity];
+      const bot = game.score >= 100 ? [107,74,6] : [21 + 45*intensity, 26 - 8*intensity, 47 - 16*intensity];
+      const grad = ctx.createLinearGradient(0,0,0,game.h);
       grad.addColorStop(0, `rgb(${top[0]|0},${top[1]|0},${top[2]|0})`);
       grad.addColorStop(1, `rgb(${bot[0]|0},${bot[1]|0},${bot[2]|0})`);
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, game.w, game.h);
-
+      ctx.fillStyle = grad; ctx.fillRect(0,0,game.w,game.h);
       drawTweets();
-
-      ctx.fillStyle = 'rgba(255,255,255,0.08)';
-      ctx.fillRect(0, game.h - 12, game.w, 12);
+      ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(0, game.h - 12, game.w, 12);
     }
 
-    function drawTweets() {
-      for (const layer of game.tweets) {
-        ctx.save();
-        ctx.globalAlpha = layer.alpha;
-        for (const t of layer.items) {
-          roundRect(t.x, t.y, t.w, t.h, 14);
-          ctx.fillStyle = '#f6f8ff';
-          ctx.fill();
-
-          ctx.beginPath();
-          ctx.fillStyle = t.avatar;
-          ctx.arc(t.x + 16, t.y + 18, 8, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = '#1f2a4b';
-          ctx.font = '700 11px Inter, sans-serif';
-          ctx.fillText(t.user, t.x + 30, t.y + 20);
-
-          ctx.fillStyle = '#16203f';
-          ctx.font = '600 11px Inter, sans-serif';
-          const lines = wrapText(t.text, t.w - 22, '600 11px Inter, sans-serif');
-          for (let i = 0; i < Math.min(3, lines.length); i++) {
-            ctx.fillText(lines[i], t.x + 11, t.y + 38 + i * 12);
-          }
-        }
-        ctx.restore();
-      }
-    }
-
-    function roundRect(x, y, w, h, r) {
-      const rr = Math.min(r, w * 0.5, h * 0.5);
-      ctx.beginPath();
-      ctx.moveTo(x + rr, y);
-      ctx.arcTo(x + w, y, x + w, y + h, rr);
-      ctx.arcTo(x + w, y + h, x, y + h, rr);
-      ctx.arcTo(x, y + h, x, y, rr);
-      ctx.arcTo(x, y, x + w, y, rr);
-      ctx.closePath();
+    function roundRect(x,y,w,h,r) {
+      const rr = Math.min(r,w*0.5,h*0.5);
+      ctx.beginPath(); ctx.moveTo(x+rr,y); ctx.arcTo(x+w,y,x+w,y+h,rr); ctx.arcTo(x+w,y+h,x,y+h,rr); ctx.arcTo(x,y+h,x,y,rr); ctx.arcTo(x,y,x+w,y,rr); ctx.closePath();
     }
 
     function wrapText(text, maxWidth, font) {
       if (font) ctx.font = font;
-      const words = String(text).split(' ');
-      const lines = [];
-      let line = '';
+      const words = String(text).split(' '); const lines=[]; let line='';
       for (const word of words) {
         const test = line ? `${line} ${word}` : word;
-        if (ctx.measureText(test).width > maxWidth && line) {
-          lines.push(line);
-          line = word;
-        } else line = test;
+        if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = word; }
+        else line = test;
       }
       if (line) lines.push(line);
       return lines;
     }
 
-    function drawObstacle(o) {
-      const x = o.x, w = o.w, topH = o.topH, botY = o.topH + o.gap, botH = game.h - botY - 12;
-      const segment = (sx, sy, sw, sh) => {
-        roundRect(sx, sy, sw, sh, 10);
-        const g = ctx.createLinearGradient(sx, sy, sx + sw, sy + sh);
-        g.addColorStop(0, '#ff6a3d');
-        g.addColorStop(1, '#d8412c');
-        ctx.fillStyle = g;
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = 'rgba(255,255,255,0.22)';
-        ctx.stroke();
-      };
-      segment(x, 0, w, topH);
-      segment(x, botY, w, botH);
-
-      ctx.save();
-      ctx.fillStyle = '#fff';
-      ctx.textAlign = 'center';
-      ctx.font = `700 ${Math.max(10, Math.min(14, w * 0.18))}px Inter, sans-serif`;
-      const lines = wrapText(o.label, w - 12);
-      const maxLines = Math.min(4, lines.length);
-      for (let i = 0; i < maxLines; i++) {
-        ctx.fillText(lines[i], x + w / 2, Math.min(topH - 14, 70) - i * 15);
-        ctx.fillText(lines[i], x + w / 2, botY + 24 + i * 15);
+    function drawTweets() {
+      for (const layer of game.tweets) {
+        ctx.save(); ctx.globalAlpha = layer.alpha;
+        for (const t of layer.items) {
+          roundRect(t.x,t.y,t.w,t.h,14); ctx.fillStyle='#f6f8ff'; ctx.fill();
+          ctx.beginPath(); ctx.fillStyle=t.avatar; ctx.arc(t.x+16,t.y+18,8,0,Math.PI*2); ctx.fill();
+          ctx.fillStyle='#1f2a4b'; ctx.font='700 11px Inter, sans-serif'; ctx.fillText(t.user, t.x+30, t.y+20);
+          ctx.fillStyle='#16203f'; ctx.font='600 11px Inter, sans-serif';
+          const lines = wrapText(t.text, t.w - 22, '600 11px Inter, sans-serif');
+          for (let i=0; i<Math.min(3, lines.length); i++) ctx.fillText(lines[i], t.x+11, t.y+38+i*12);
+        }
+        ctx.restore();
       }
+    }
+
+    function drawObstacle(o) {
+      const x=o.x,w=o.w,topH=o.topH,botY=o.topH+o.gap,botH=game.h-botY-12;
+      const segment=(sx,sy,sw,sh)=>{ roundRect(sx,sy,sw,sh,10); const g=ctx.createLinearGradient(sx,sy,sx+sw,sy+sh); g.addColorStop(0,'#ff6a3d'); g.addColorStop(1,'#d8412c'); ctx.fillStyle=g; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='rgba(255,255,255,0.22)'; ctx.stroke(); };
+      segment(x,0,w,topH); segment(x,botY,w,botH);
+      ctx.save(); ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.font=`700 ${Math.max(10, Math.min(14, w*0.18))}px Inter, sans-serif`;
+      const lines=wrapText(o.label,w-12); const maxLines=Math.min(4,lines.length);
+      for (let i=0;i<maxLines;i++){ ctx.fillText(lines[i], x+w/2, Math.min(topH-14,70)-i*15); ctx.fillText(lines[i], x+w/2, botY+24+i*15); }
       ctx.restore();
     }
 
     function drawLobster() {
-      const l = game.lobster;
-      let y = l.y;
-      let rot = l.rot;
-      if (game.state === 'start') {
-        y = game.h * 0.48 + Math.sin(l.bob) * 10;
-        rot = Math.sin(l.bob * 1.2) * 0.08;
-      }
-      ctx.save();
-      ctx.translate(l.x, y);
-      ctx.rotate(rot);
-      const size = 60;
-      if (lobsterImgLoaded) {
-        ctx.drawImage(lobsterImg, -size / 2, -size / 2, size, size);
-      } else {
-        // fallback while image loads
-        ctx.fillStyle = '#ff6a3d';
-        ctx.beginPath();
-        ctx.arc(0, 0, 22, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      const l=game.lobster; let y=l.y, rot=l.rot;
+      if (game.state==='start') { y=game.h*0.48 + Math.sin(l.bob)*10; rot=Math.sin(l.bob*1.2)*0.08; }
+      ctx.save(); ctx.translate(l.x,y); ctx.rotate(rot);
+      if (lobsterImgLoaded) ctx.drawImage(lobsterImg, -30, -30, 60, 60);
+      else { ctx.fillStyle='#ff6a3d'; ctx.beginPath(); ctx.arc(0,0,22,0,Math.PI*2); ctx.fill(); }
       ctx.restore();
     }
 
-    function draw() {
-      drawBackground();
-      for (const o of game.obstacles) drawObstacle(o);
-      drawLobster();
-    }
+    function draw() { drawBackground(); for (const o of game.obstacles) drawObstacle(o); drawLobster(); }
 
     function frame(ts) {
       if (!game.lastTime) game.lastTime = ts;
-      const dt = Math.min(0.033, (ts - game.lastTime) / 1000);
-      game.lastTime = ts;
-      update(dt);
-      draw();
-      requestAnimationFrame(frame);
+      const dt = Math.min(0.033, (ts - game.lastTime) / 1000); game.lastTime = ts;
+      update(dt); draw(); requestAnimationFrame(frame);
     }
 
-    function onPrimaryInput() {
-      if (game.state === 'dead') return;
-      flap();
-    }
+    function onPrimaryInput() { if (game.state !== 'dead') flap(); }
 
     window.addEventListener('resize', resize);
     window.addEventListener('keydown', (e) => {
-      if (e.code === 'Space') {
-        e.preventDefault();
-        if (game.state !== 'dead') onPrimaryInput();
-      }
+      if (e.code === 'Space') { e.preventDefault(); if (game.state !== 'dead') onPrimaryInput(); }
       if (e.code === 'Enter' && game.state === 'dead') startGame();
     }, { passive: false });
-
-    window.addEventListener('pointerdown', (e) => {
-      if (e.target.closest('button')) return;
-      if (game.state !== 'dead') onPrimaryInput();
-    });
+    window.addEventListener('pointerdown', (e) => { if (e.target.closest('button,input')) return; if (game.state !== 'dead') onPrimaryInput(); });
 
     retryBtn.addEventListener('click', startGame);
     shareBtn.addEventListener('click', async () => {
       const text = `I survived ${game.score} updates in Flappy Claw 🦞 Rank: ${getRank(game.score)} — '${game.deathMessage}' Can you beat me? https://flappy-claw.vercel.app`;
-      try {
-        await navigator.clipboard.writeText(text);
-        shareBtn.textContent = 'Copied!';
-      } catch {
-        shareBtn.textContent = 'Copy failed';
-      }
+      try { await navigator.clipboard.writeText(text); shareBtn.textContent = 'Copied!'; }
+      catch { shareBtn.textContent = 'Copy failed'; }
       setTimeout(() => { shareBtn.textContent = 'Share Score'; }, 1200);
     });
 
+    viewLeaderboardBtn.addEventListener('click', async () => {
+      startLeaderboard.classList.toggle('hidden');
+      if (!startLeaderboard.classList.contains('hidden')) await refreshLeaderboards();
+    });
+
+    submitScoreBtn.addEventListener('click', submitScore);
+
     resize();
     updateHud();
+    refreshLeaderboards();
     requestAnimationFrame(frame);
   </script>
 </body>
