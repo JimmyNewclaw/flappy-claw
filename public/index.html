@@ -221,7 +221,18 @@
     const flashMsg = document.getElementById('flashMsg');
 
     const lobsterImg = new Image();
-    lobsterImg.src = 'Jimmy_NewUserClaw.png';
+    let lobsterImgLoaded = false;
+
+    lobsterImg.onload = () => {
+      lobsterImgLoaded = true;
+    };
+
+    lobsterImg.onerror = () => {
+      lobsterImgLoaded = false;
+      console.warn('Could not load Jimmy_NewUserClaw.png from public folder.');
+    };
+
+    lobsterImg.src = './Jimmy_NewUserClaw.png';
 
     const obstacleLabels = [
       'Windows is restarting...','npm update (847 vulnerabilities)','Breaking change in v2.0','Your dependencies are outdated','Docker needs 14GB update','OAuth token expired','Gateway timeout','CORS error','Vercel build failed','OpenClaw 2026.2.3 released','git merge conflict (47 files)','Your SSL cert expired','Chrome updated. Extensions broken.','pip install --break-system-packages','Node 22 → 23 migration','Tailwind v4: everything renamed','YAML indentation error','502 Bad Gateway','Your API key is invalid','Segmentation fault (core dumped)'
@@ -567,7 +578,7 @@
       ctx.translate(l.x, y);
       ctx.rotate(rot);
       const size = 60;
-      if (lobsterImg.complete && lobsterImg.naturalWidth > 0) {
+      if (lobsterImgLoaded) {
         ctx.drawImage(lobsterImg, -size / 2, -size / 2, size, size);
       } else {
         // fallback while image loads
