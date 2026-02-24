@@ -6,6 +6,15 @@
   <title>🦞 Flappy Claw — Survive the Updates</title>
   <link rel="icon" type="image/png" href="Jimmy_NewUserClaw.png">
   <link rel="apple-touch-icon" href="Jimmy_NewUserClaw.png">
+  <meta property="og:title" content="Flappy Claw — Survive the Updates">
+  <meta property="og:description" content="A lobster vs software updates. How many can you survive? 🦞">
+  <meta property="og:url" content="https://flappy-claw.vercel.app">
+  <meta property="og:image" content="https://flappy-claw.vercel.app/Jimmy_NewUserClaw.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Flappy Claw — Survive the Updates">
+  <meta name="twitter:description" content="A lobster vs software updates. How many can you survive? 🦞">
+  <meta name="twitter:image" content="https://flappy-claw.vercel.app/Jimmy_NewUserClaw.png">
   <style>
     :root {
       --text: #eef3ff;
@@ -133,7 +142,10 @@
     <div class="panel">
       <h1 class="title">🦞 Flappy Claw</h1>
       <p class="subtitle">Survive the Updates</p>
+      <p class="desc" id="challengeText" style="display:none;"></p>
       <p class="desc">Tap, click, or press Space to start</p>
+      <p class="small" id="bestScoreText" style="display:none;margin-top:6px;"></p>
+      <p class="small" id="tipText" style="margin-top:6px;"></p>
       <div class="btnRow">
         <button class="btn btn-secondary" id="viewLeaderboardBtn">Leaderboard</button>
       </div>
@@ -146,13 +158,17 @@
     <div class="panel">
       <h2 class="title" style="font-size:clamp(1.5rem,6vw,2.4rem);">UPDATE COMPLETE.</h2>
       <p class="subtitle" style="color:#ffd9d9;">Everything is broken.</p>
+      <p class="desc" id="newBestText" style="display:none;color:#ffcf4a;font-weight:900;">🎉 NEW PERSONAL BEST!</p>
       <p class="desc" id="deathScore">You survived 0 updates</p>
       <p class="desc" id="deathRank" style="margin-top:6px;font-weight:800;">Rank: Intern</p>
       <p class="desc" id="deathMsg" style="margin-top:10px;color:#ffe8b8;"></p>
 
-      <div class="btnRow two">
+      <div class="btnRow">
         <button class="btn btn-primary" id="retryBtn">Try Again</button>
+      </div>
+      <div class="btnRow two">
         <button class="btn btn-secondary" id="shareBtn">Share Score</button>
+        <button class="btn btn-secondary" id="challengeBtn">Challenge a Friend</button>
       </div>
 
       <div class="submitWrap">
@@ -167,6 +183,7 @@
       <div class="leaderboard" id="deathLeaderboard"></div>
       <div id="rankStatus" class="statusMini"></div>
       <div id="unlockStatus" class="statusMini"></div>
+      <div class="statusMini" style="text-align:center;opacity:.65;margin-top:10px;">flappy-claw.vercel.app 🦞</div>
     </div>
   </div>
 
@@ -185,7 +202,12 @@
     const deathMsg = document.getElementById('deathMsg');
     const retryBtn = document.getElementById('retryBtn');
     const shareBtn = document.getElementById('shareBtn');
+    const challengeBtn = document.getElementById('challengeBtn');
     const flashMsg = document.getElementById('flashMsg');
+    const challengeText = document.getElementById('challengeText');
+    const bestScoreText = document.getElementById('bestScoreText');
+    const tipText = document.getElementById('tipText');
+    const newBestText = document.getElementById('newBestText');
 
     const viewLeaderboardBtn = document.getElementById('viewLeaderboardBtn');
     const startLeaderboard = document.getElementById('startLeaderboard');
@@ -198,6 +220,18 @@
     const muteBtn = document.getElementById('muteBtn');
 
     let lastSubmittedId = null;
+    let currentBest = Number(localStorage.getItem('flappyClawBest') || 0);
+
+    const tips = [
+      'Pro tip: Don\'t update on Fridays',
+      'Pro tip: Always read the changelog (just kidding, nobody does)',
+      'Pro tip: If it works, don\'t touch it',
+      'Pro tip: Have you tried mass layoff\'ing the problem?',
+      'Pro tip: Git commit before you git rekt',
+      'Pro tip: The cloud is just someone else\'s computer',
+      'Pro tip: It worked on my machine',
+      'Pro tip: Ctrl+Z is your best friend'
+    ];
 
     const lobsterImg = new Image();
     let lobsterImgLoaded = false;
@@ -327,6 +361,33 @@
       return randomPick(deathMessagesByTier[tier.key]);
     }
 
+    function updateBestUi() {
+      if (currentBest > 0) {
+        bestScoreText.style.display = 'block';
+        bestScoreText.textContent = `Your Best: ${currentBest} updates survived`;
+      } else {
+        bestScoreText.style.display = 'none';
+      }
+    }
+
+    function applyChallengeFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const c = Number(params.get('challenge') || 0);
+      const n = (params.get('name') || '').trim();
+      if (c > 0 && n) {
+        challengeText.style.display = 'block';
+        challengeText.textContent = `${n} survived ${c} updates. Can you beat them?`;
+      } else {
+        challengeText.style.display = 'none';
+      }
+    }
+
+    function startTipRotation() {
+      const setTip = () => { tipText.textContent = randomPick(tips); };
+      setTip();
+      setInterval(setTip, 3000);
+    }
+
     async function fetchLeaderboard() {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/leaderboard?select=id,name,score,title,death_message,created_at&order=score.desc&limit=10`, {
         headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
@@ -420,6 +481,7 @@
 
     function startGame() {
       resetRun(); game.state = 'playing';
+      newBestText.style.display = 'none';
       startOverlay.classList.add('hidden'); deathOverlay.classList.add('hidden'); deathOverlay.classList.remove('show');
     }
 
@@ -434,6 +496,15 @@
       deathMsg.textContent = game.deathMessage;
       submitStatus.textContent = '';
       rankStatus.textContent = '';
+
+      if (game.score > currentBest) {
+        currentBest = game.score;
+        localStorage.setItem('flappyClawBest', String(currentBest));
+        newBestText.style.display = 'block';
+        updateBestUi();
+      } else {
+        newBestText.style.display = 'none';
+      }
 
       const tier = getRoastTier(game.score);
       const unlocked = JSON.parse(localStorage.getItem('flappyClawUnlockedTiers') || '[]');
@@ -668,6 +739,14 @@
       setTimeout(() => { shareBtn.textContent = 'Share Score'; }, 1200);
     });
 
+    challengeBtn.addEventListener('click', async () => {
+      const challenger = (playerName.value || 'Anonymous').trim().slice(0, 20) || 'Anonymous';
+      const url = `https://flappy-claw.vercel.app?challenge=${encodeURIComponent(game.score)}&name=${encodeURIComponent(challenger)}`;
+      try { await navigator.clipboard.writeText(url); challengeBtn.textContent = 'Challenge Copied!'; }
+      catch { challengeBtn.textContent = 'Copy failed'; }
+      setTimeout(() => { challengeBtn.textContent = 'Challenge a Friend'; }, 1400);
+    });
+
     viewLeaderboardBtn.addEventListener('click', async () => {
       startLeaderboard.classList.toggle('hidden');
       if (!startLeaderboard.classList.contains('hidden')) await refreshLeaderboards();
@@ -683,6 +762,9 @@
     });
 
     updateMuteUi();
+    applyChallengeFromUrl();
+    updateBestUi();
+    startTipRotation();
     resize();
     updateHud();
     refreshLeaderboards();
