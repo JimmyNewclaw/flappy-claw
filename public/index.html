@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🦞 Flappy Claw — Survive the Updates</title>
+  <link rel="icon" type="image/png" href="Jimmy_NewUserClaw.png">
+  <link rel="apple-touch-icon" href="Jimmy_NewUserClaw.png">
   <style>
     :root {
       --text: #eef3ff;
@@ -163,6 +165,8 @@
       </div>
 
       <div class="leaderboard" id="deathLeaderboard"></div>
+      <div id="rankStatus" class="statusMini"></div>
+      <div id="unlockStatus" class="statusMini"></div>
     </div>
   </div>
 
@@ -189,6 +193,8 @@
     const playerName = document.getElementById('playerName');
     const submitScoreBtn = document.getElementById('submitScoreBtn');
     const submitStatus = document.getElementById('submitStatus');
+    const rankStatus = document.getElementById('rankStatus');
+    const unlockStatus = document.getElementById('unlockStatus');
     const muteBtn = document.getElementById('muteBtn');
 
     let lastSubmittedId = null;
@@ -209,7 +215,13 @@
     const obstacleLabels = ['Windows is restarting...','npm update (847 vulnerabilities)','Breaking change in v2.0','Your dependencies are outdated','Docker needs 14GB update','OAuth token expired','Gateway timeout','CORS error','Vercel build failed','OpenClaw 2026.2.3 released','git merge conflict (47 files)','Your SSL cert expired','Chrome updated. Extensions broken.','pip install --break-system-packages','Node 22 → 23 migration','Tailwind v4: everything renamed','YAML indentation error','502 Bad Gateway','Your API key is invalid','Segmentation fault (core dumped)'];
     const tweetPool = ['my agent just made me $4,000 while I slept 🔥','6 months in. OpenClaw replaced my entire team.','this changed my life. not exaggerating.','just automated my entire business lmao',"I don't even code. My lobster does. 🦞","IT'S A SCAM. I lost 3 hours of my life.",'there is literally no use case for this',"my agent mass layoff'd itself 💀",'spent $200 in tokens and it wrote SOUL.md wrong','why does my agent keep routing to MAIN',"bro it just mass layoff'd my spreadsheet",'I asked it to make dinner and it deleted my fridge',"is anyone's agent arguing with itself at 3am",'HELP my agent is posting on my behalf','day 47: the agent has gained sentience',"this is the future and I'm here for it",'imagine NOT having 6 AI agents working for you',"my tokens are gone. my fridge is rated. I'm alive.","THERE'S NO USE CASE, idiots",'look how I made $99,999 with one prompt'];
     const users = ['@shipfast', '@tokenburner', '@vibeCTO', '@clawcoder', '@prodpanic', '@updatecat'];
-    const deathMessages = ["Should've pinned your versions.",'Your mass revert has been scheduled.','Have you tried rolling back to last Tuesday?','Even npm install lasts longer than that.','Your PR has been closed by a bot.','Skill issue. Read the changelog next time.','The intern shipped to prod again.','Your Docker container has left the chat.','Looks like somebody forgot the migration guide.','This is what happens when you update on a Friday.','At least your unit tests passed. Oh wait.','git blame: it was you all along.','Your Jira ticket has been reopened.','Deployment failed. Rollback failed. Resume updated.','You mass layoff has been scheduled.'];
+    const deathMessagesByTier = {
+      intern: ['Have you tried turning it off and on again?','Maybe coding isn\'t for you.','Your mass layoff has been scheduled.','Even the intern wouldn\'t ship this.','Task failed successfully.'],
+      junior: ['Should\'ve pinned your versions.','Skill issue. Read the changelog next time.','Your PR has been closed by a bot.','At least your unit tests passed. Oh wait.','git blame: it was you all along.'],
+      mid: ['The intern shipped to prod again. Wait, that was you.','Your Docker container has left the chat.','Looks like somebody forgot the migration guide.','This is what happens when you update on a Friday.','Your Jira ticket has been reopened. Again.'],
+      senior: ['Even seniors mass revert sometimes.','Your mass layoff has been mass layoff\'d.','The CI/CD pipeline sends its regards.','You mass layoff\'d so hard the logs caught fire.','Stack Overflow can\'t save you now.'],
+      staff: ['Legends fall too.','The mass layoff comes for us all.','Your mass layoff has mass layoff\'d itself into mass layoff recursion.','Deployment failed. Rollback failed. Resume updated.','You were this close to mass layoff greatness.']
+    };
 
     const game = {
       state: 'start', w: 0, h: 0, dpr: 1, lastTime: 0,
@@ -302,6 +314,19 @@
       return 'Intern';
     }
 
+    function getRoastTier(s) {
+      if (s >= 51) return { key: 'staff', label: 'Staff-tier' };
+      if (s >= 31) return { key: 'senior', label: 'Senior-tier' };
+      if (s >= 16) return { key: 'mid', label: 'Mid-tier' };
+      if (s >= 6) return { key: 'junior', label: 'Junior-tier' };
+      return { key: 'intern', label: 'Intern-tier' };
+    }
+
+    function getDeathMessageForScore(s) {
+      const tier = getRoastTier(s);
+      return randomPick(deathMessagesByTier[tier.key]);
+    }
+
     async function fetchLeaderboard() {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/leaderboard?select=id,name,score,title,death_message,created_at&order=score.desc&limit=10`, {
         headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
@@ -332,6 +357,7 @@
     async function submitScore() {
       const name = (playerName.value || 'Anonymous').trim().slice(0, 20) || 'Anonymous';
       submitStatus.textContent = 'Submitting...';
+      rankStatus.textContent = '';
       submitScoreBtn.disabled = true;
       try {
         const payload = [{ name, score: game.score, title: getRank(game.score), death_message: game.deathMessage }];
@@ -349,6 +375,24 @@
         const saved = await res.json();
         lastSubmittedId = saved?.[0]?.id || null;
         submitStatus.textContent = 'Score submitted!';
+
+        const [higherRes, totalRes] = await Promise.all([
+          fetch(`${SUPABASE_URL}/rest/v1/leaderboard?select=id&score=gt.${game.score}`, {
+            headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+          }),
+          fetch(`${SUPABASE_URL}/rest/v1/leaderboard?select=id`, {
+            headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+          })
+        ]);
+
+        if (higherRes.ok && totalRes.ok) {
+          const higherRows = await higherRes.json();
+          const totalRows = await totalRes.json();
+          const rank = (higherRows?.length || 0) + 1;
+          const total = (totalRows?.length || 0);
+          rankStatus.textContent = `You're ranked #${rank} of ${total} players`;
+        }
+
         await refreshLeaderboards();
       } catch {
         submitStatus.textContent = 'Failed to submit score.';
@@ -381,13 +425,26 @@
 
     function killGame() {
       if (game.state !== 'playing') return;
-      game.state = 'dead'; game.deathMessage = randomPick(deathMessages);
+      game.state = 'dead';
+      game.deathMessage = getDeathMessageForScore(game.score);
       game.shakeTime = 0.2;
       playDeathSound();
       deathScore.textContent = `You survived ${game.score} updates`;
       deathRank.textContent = `Rank: ${getRank(game.score)}`;
       deathMsg.textContent = game.deathMessage;
       submitStatus.textContent = '';
+      rankStatus.textContent = '';
+
+      const tier = getRoastTier(game.score);
+      const unlocked = JSON.parse(localStorage.getItem('flappyClawUnlockedTiers') || '[]');
+      if (!unlocked.includes(tier.key)) {
+        unlocked.push(tier.key);
+        localStorage.setItem('flappyClawUnlockedTiers', JSON.stringify(unlocked));
+        unlockStatus.textContent = `🔓 Unlocked ${tier.label} roasts!`;
+      } else {
+        unlockStatus.textContent = '';
+      }
+
       deathOverlay.classList.remove('hidden'); requestAnimationFrame(() => deathOverlay.classList.add('show'));
       refreshLeaderboards();
     }
