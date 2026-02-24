@@ -6,12 +6,9 @@
   <title>🦞 Flappy Claw — Survive the Updates</title>
   <style>
     :root {
-      --bg-a: #0b1020;
-      --bg-b: #151a2f;
       --text: #eef3ff;
       --muted: #aeb8d9;
       --accent: #ffcf4a;
-      --danger: #ff6b6b;
       --panel: rgba(10, 14, 30, 0.72);
       --border: rgba(255, 255, 255, 0.2);
     }
@@ -210,7 +207,6 @@
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
 
-    const hud = document.getElementById('hud');
     const scoreLabel = document.getElementById('scoreLabel');
     const rankLabel = document.getElementById('rankLabel');
 
@@ -224,64 +220,58 @@
     const shareBtn = document.getElementById('shareBtn');
     const flashMsg = document.getElementById('flashMsg');
 
+    const lobsterImg = new Image();
+    lobsterImg.src = 'Jimmy_NewUserClaw.png';
+
     const obstacleLabels = [
-      'Windows is restarting...',
-      'npm update (847 vulnerabilities)',
-      'Breaking change in v2.0',
-      'Your dependencies are outdated',
-      'Docker needs 14GB update',
-      'OAuth token expired',
-      'Gateway timeout',
-      'CORS error',
-      'Vercel build failed',
-      'OpenClaw 2026.2.3 released',
-      'git merge conflict (47 files)',
-      'Your SSL cert expired',
-      'Chrome updated. Extensions broken.',
-      'pip install --break-system-packages',
-      'Node 22 → 23 migration',
-      'Tailwind v4: everything renamed',
-      'YAML indentation error',
-      '502 Bad Gateway',
-      'Your API key is invalid',
-      'Segmentation fault (core dumped)'
+      'Windows is restarting...','npm update (847 vulnerabilities)','Breaking change in v2.0','Your dependencies are outdated','Docker needs 14GB update','OAuth token expired','Gateway timeout','CORS error','Vercel build failed','OpenClaw 2026.2.3 released','git merge conflict (47 files)','Your SSL cert expired','Chrome updated. Extensions broken.','pip install --break-system-packages','Node 22 → 23 migration','Tailwind v4: everything renamed','YAML indentation error','502 Bad Gateway','Your API key is invalid','Segmentation fault (core dumped)'
     ];
 
+    const tweetPool = [
+      'my agent just made me $4,000 while I slept 🔥',
+      '6 months in. OpenClaw replaced my entire team.',
+      'this changed my life. not exaggerating.',
+      'just automated my entire business lmao',
+      "I don't even code. My lobster does. 🦞",
+      "IT'S A SCAM. I lost 3 hours of my life.",
+      'there is literally no use case for this',
+      "my agent mass layoff'd itself 💀",
+      'spent $200 in tokens and it wrote SOUL.md wrong',
+      'why does my agent keep routing to MAIN',
+      "bro it just mass layoff'd my spreadsheet",
+      'I asked it to make dinner and it deleted my fridge',
+      "is anyone's agent arguing with itself at 3am",
+      'HELP my agent is posting on my behalf',
+      'day 47: the agent has gained sentience',
+      "this is the future and I'm here for it",
+      'imagine NOT having 6 AI agents working for you',
+      'my tokens are gone. my fridge is rated. I\'m alive.',
+      "THERE'S NO USE CASE, idiots",
+      'look how I made $99,999 with one prompt'
+    ];
+
+    const users = ['@shipfast', '@tokenburner', '@vibeCTO', '@clawcoder', '@prodpanic', '@updatecat'];
+
     const deathMessages = [
-      "Should've pinned your versions.",
-      'Your mass revert has been scheduled.',
-      'Have you tried rolling back to last Tuesday?',
-      'Even npm install lasts longer than that.',
-      'Your PR has been closed by a bot.',
-      'Skill issue. Read the changelog next time.',
-      'The intern shipped to prod again.',
-      'Your Docker container has left the chat.',
-      'Looks like somebody forgot the migration guide.',
-      'This is what happens when you update on a Friday.',
-      'At least your unit tests passed. Oh wait.',
-      'git blame: it was you all along.',
-      'Your Jira ticket has been reopened.',
-      'Deployment failed. Rollback failed. Resume updated.',
-      'You mass layoff has been scheduled.'
+      "Should've pinned your versions.",'Your mass revert has been scheduled.','Have you tried rolling back to last Tuesday?','Even npm install lasts longer than that.','Your PR has been closed by a bot.','Skill issue. Read the changelog next time.','The intern shipped to prod again.','Your Docker container has left the chat.','Looks like somebody forgot the migration guide.','This is what happens when you update on a Friday.','At least your unit tests passed. Oh wait.','git blame: it was you all along.','Your Jira ticket has been reopened.','Deployment failed. Rollback failed. Resume updated.','You mass layoff has been scheduled.'
     ];
 
     const game = {
-      state: 'start', // start, playing, dead
-      w: 0,
-      h: 0,
-      dpr: 1,
+      state: 'start',
+      w: 0, h: 0, dpr: 1,
       lastTime: 0,
       score: 0,
-      best: 0,
       speed: 180,
       spawnTimer: 0,
       spawnEvery: 1.45,
-      flashTimer: 0,
       deathMessage: '',
-      worldShift: 0,
-      gridShift: 0,
       lobster: null,
-      obstacles: []
+      obstacles: [],
+      tweets: [
+        { speed: 28, alpha: 0.2, spawn: 0, items: [] },
+        { speed: 42, alpha: 0.25, spawn: 0.4, items: [] },
+        { speed: 58, alpha: 0.3, spawn: 0.8, items: [] }
+      ]
     };
 
     function getRank(s) {
@@ -294,9 +284,7 @@
       return 'Intern';
     }
 
-    function randomPick(arr) {
-      return arr[(Math.random() * arr.length) | 0];
-    }
+    const randomPick = (arr) => arr[(Math.random() * arr.length) | 0];
 
     function resize() {
       const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
@@ -310,17 +298,9 @@
       const baseX = Math.max(90, game.w * 0.28);
       const baseY = game.h * 0.46;
       if (!game.lobster) {
-        game.lobster = {
-          x: baseX,
-          y: baseY,
-          vy: 0,
-          r: Math.max(18, Math.min(24, game.w * 0.04)),
-          rot: 0,
-          bob: 0
-        };
+        game.lobster = { x: baseX, y: baseY, vy: 0, r: 30, rot: 0, bob: 0 };
       } else {
         game.lobster.x = baseX;
-        game.lobster.r = Math.max(18, Math.min(24, game.w * 0.04));
         if (game.state !== 'playing') game.lobster.y = baseY;
       }
     }
@@ -330,11 +310,14 @@
       game.speed = 180;
       game.spawnTimer = 0;
       game.obstacles = [];
-      game.flashTimer = 0;
       game.deathMessage = '';
       game.lobster.vy = 0;
       game.lobster.y = game.h * 0.46;
       game.lobster.rot = 0;
+      for (const layer of game.tweets) {
+        layer.items = [];
+        layer.spawn = Math.random();
+      }
       updateHud();
     }
 
@@ -349,7 +332,6 @@
     function killGame() {
       if (game.state !== 'playing') return;
       game.state = 'dead';
-      game.best = Math.max(game.best, game.score);
       game.deathMessage = randomPick(deathMessages);
       deathScore.textContent = `You survived ${game.score} updates`;
       deathRank.textContent = `Rank: ${getRank(game.score)}`;
@@ -359,10 +341,7 @@
     }
 
     function flap() {
-      if (game.state === 'start') {
-        startGame();
-      }
-      if (game.state === 'dead') return;
+      if (game.state === 'start') startGame();
       if (game.state !== 'playing') return;
       game.lobster.vy = -340;
       game.lobster.rot = -0.38;
@@ -389,20 +368,43 @@
       const gap = Math.max(160, Math.min(230, game.h * 0.28));
       const margin = Math.max(70, game.h * 0.12);
       const topH = margin + Math.random() * (game.h - gap - margin * 2);
-      const label = randomPick(obstacleLabels);
+      return { x: game.w + 16, w: pipeWidth, topH, gap, passed: false, label: randomPick(obstacleLabels) };
+    }
+
+    function makeTweet(layer) {
+      const text = randomPick(tweetPool);
+      const user = randomPick(users);
+      const w = Math.max(210, Math.min(360, 130 + text.length * 5.2));
+      const h = 64 + Math.random() * 26;
+      const y = 20 + Math.random() * (game.h - h - 70);
       return {
-        x: game.w + 16,
-        w: pipeWidth,
-        topH,
-        gap,
-        passed: false,
-        label
+        x: game.w + 20 + Math.random() * 180,
+        y,
+        w,
+        h,
+        text,
+        user,
+        avatar: `hsl(${(Math.random() * 360) | 0} 70% 60%)`
       };
     }
 
+    function updateTweets(dt) {
+      for (const layer of game.tweets) {
+        layer.spawn -= dt;
+        if (layer.spawn <= 0) {
+          layer.items.push(makeTweet(layer));
+          layer.spawn = 0.8 + Math.random() * 1.6;
+        }
+        for (let i = layer.items.length - 1; i >= 0; i--) {
+          const t = layer.items[i];
+          t.x -= layer.speed * dt;
+          if (t.x + t.w < -30) layer.items.splice(i, 1);
+        }
+      }
+    }
+
     function update(dt) {
-      game.worldShift += game.speed * dt;
-      game.gridShift += game.speed * 0.24 * dt;
+      updateTweets(dt);
 
       if (game.state === 'start') {
         game.lobster.bob += dt * 2.2;
@@ -410,8 +412,7 @@
       }
 
       if (game.state === 'playing') {
-        const gravity = 900;
-        game.lobster.vy += gravity * dt;
+        game.lobster.vy += 900 * dt;
         game.lobster.y += game.lobster.vy * dt;
 
         const targetRot = Math.max(-0.45, Math.min(1.1, game.lobster.vy / 520));
@@ -424,39 +425,28 @@
         }
 
         const floorY = game.h - 12;
-        if (game.lobster.y - game.lobster.r <= 0 || game.lobster.y + game.lobster.r >= floorY) {
-          killGame();
-        }
+        if (game.lobster.y - 24 <= 0 || game.lobster.y + 24 >= floorY) killGame();
 
         for (let i = game.obstacles.length - 1; i >= 0; i--) {
           const o = game.obstacles[i];
           o.x -= game.speed * dt;
 
-          if (!o.passed && o.x + o.w < game.lobster.x - game.lobster.r * 0.5) {
+          if (!o.passed && o.x + o.w < game.lobster.x - 18) {
             o.passed = true;
             game.score += 1;
             updateHud();
             scorePop();
-
-            if (game.score % 10 === 0) {
-              game.speed += 10;
-            }
-
+            if (game.score % 10 === 0) game.speed += 10;
             if (game.score === 69) showFlash('Nice.');
             if (game.score === 42) showFlash('The answer.');
           }
 
           const lx = game.lobster.x;
           const ly = game.lobster.y;
-          const lr = game.lobster.r * 0.86;
-
+          const lr = 22;
           const inX = lx + lr > o.x && lx - lr < o.x + o.w;
           if (inX) {
-            const hitTop = ly - lr < o.topH;
-            const hitBottom = ly + lr > o.topH + o.gap;
-            if (hitTop || hitBottom) {
-              killGame();
-            }
+            if (ly - lr < o.topH || ly + lr > o.topH + o.gap) killGame();
           }
 
           if (o.x + o.w < -24) game.obstacles.splice(i, 1);
@@ -466,43 +456,47 @@
 
     function drawBackground() {
       const intensity = Math.min(1, game.score / 100);
-      let a = [11, 16, 32];
-      let b = [21, 26, 47];
-
-      if (game.score >= 100) {
-        a = [62, 44, 7];
-        b = [107, 74, 6];
-      } else {
-        a = [a[0] + 28 * intensity, a[1], a[2] - 6 * intensity];
-        b = [b[0] + 45 * intensity, b[1] - 8 * intensity, b[2] - 16 * intensity];
-      }
-
+      const top = game.score >= 100 ? [62, 44, 7] : [11 + 28 * intensity, 16, 32 - 6 * intensity];
+      const bot = game.score >= 100 ? [107, 74, 6] : [21 + 45 * intensity, 26 - 8 * intensity, 47 - 16 * intensity];
       const grad = ctx.createLinearGradient(0, 0, 0, game.h);
-      grad.addColorStop(0, `rgb(${a[0]|0},${a[1]|0},${a[2]|0})`);
-      grad.addColorStop(1, `rgb(${b[0]|0},${b[1]|0},${b[2]|0})`);
+      grad.addColorStop(0, `rgb(${top[0]|0},${top[1]|0},${top[2]|0})`);
+      grad.addColorStop(1, `rgb(${bot[0]|0},${bot[1]|0},${bot[2]|0})`);
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, game.w, game.h);
 
-      // scrolling terminal-like grid
-      ctx.strokeStyle = 'rgba(164, 189, 255, 0.11)';
-      ctx.lineWidth = 1;
-      const grid = 36;
-      const offset = -(game.gridShift % grid);
+      drawTweets();
 
-      ctx.beginPath();
-      for (let x = offset; x <= game.w + grid; x += grid) {
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, game.h);
-      }
-      for (let y = 0; y <= game.h; y += grid) {
-        ctx.moveTo(0, y + offset * 0.1);
-        ctx.lineTo(game.w, y + offset * 0.1);
-      }
-      ctx.stroke();
-
-      // floor strip
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
       ctx.fillRect(0, game.h - 12, game.w, 12);
+    }
+
+    function drawTweets() {
+      for (const layer of game.tweets) {
+        ctx.save();
+        ctx.globalAlpha = layer.alpha;
+        for (const t of layer.items) {
+          roundRect(t.x, t.y, t.w, t.h, 14);
+          ctx.fillStyle = '#f6f8ff';
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.fillStyle = t.avatar;
+          ctx.arc(t.x + 16, t.y + 18, 8, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#1f2a4b';
+          ctx.font = '700 11px Inter, sans-serif';
+          ctx.fillText(t.user, t.x + 30, t.y + 20);
+
+          ctx.fillStyle = '#16203f';
+          ctx.font = '600 11px Inter, sans-serif';
+          const lines = wrapText(t.text, t.w - 22, '600 11px Inter, sans-serif');
+          for (let i = 0; i < Math.min(3, lines.length); i++) {
+            ctx.fillText(lines[i], t.x + 11, t.y + 38 + i * 12);
+          }
+        }
+        ctx.restore();
+      }
     }
 
     function roundRect(x, y, w, h, r) {
@@ -516,50 +510,8 @@
       ctx.closePath();
     }
 
-    function drawObstacle(o) {
-      const x = o.x;
-      const w = o.w;
-      const topH = o.topH;
-      const botY = o.topH + o.gap;
-      const botH = game.h - botY - 12;
-
-      const drawSegment = (sx, sy, sw, sh) => {
-        roundRect(sx, sy, sw, sh, 10);
-        const g = ctx.createLinearGradient(sx, sy, sx + sw, sy + sh);
-        g.addColorStop(0, '#ff6a3d');
-        g.addColorStop(1, '#d8412c');
-        ctx.fillStyle = g;
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
-        ctx.stroke();
-      };
-
-      drawSegment(x, 0, w, topH);
-      drawSegment(x, botY, w, botH);
-
-      ctx.save();
-      ctx.fillStyle = '#fff';
-      ctx.textAlign = 'center';
-      ctx.font = `700 ${Math.max(10, Math.min(14, w * 0.18))}px Inter, sans-serif`;
-
-      const lines = wrapText(o.label, w - 12);
-      const maxLines = Math.min(4, lines.length);
-
-      const drawLines = (baseY, invert = false) => {
-        for (let i = 0; i < maxLines; i++) {
-          const txt = lines[i];
-          const yy = invert ? (baseY - i * 15) : (baseY + i * 15);
-          ctx.fillText(txt, x + w / 2, yy);
-        }
-      };
-
-      drawLines(Math.min(topH - 14, 70), true);
-      drawLines(botY + 24, false);
-      ctx.restore();
-    }
-
-    function wrapText(text, maxWidth) {
+    function wrapText(text, maxWidth, font) {
+      if (font) ctx.font = font;
       const words = String(text).split(' ');
       const lines = [];
       let line = '';
@@ -568,65 +520,62 @@
         if (ctx.measureText(test).width > maxWidth && line) {
           lines.push(line);
           line = word;
-        } else {
-          line = test;
-        }
+        } else line = test;
       }
       if (line) lines.push(line);
       return lines;
+    }
+
+    function drawObstacle(o) {
+      const x = o.x, w = o.w, topH = o.topH, botY = o.topH + o.gap, botH = game.h - botY - 12;
+      const segment = (sx, sy, sw, sh) => {
+        roundRect(sx, sy, sw, sh, 10);
+        const g = ctx.createLinearGradient(sx, sy, sx + sw, sy + sh);
+        g.addColorStop(0, '#ff6a3d');
+        g.addColorStop(1, '#d8412c');
+        ctx.fillStyle = g;
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+        ctx.stroke();
+      };
+      segment(x, 0, w, topH);
+      segment(x, botY, w, botH);
+
+      ctx.save();
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.font = `700 ${Math.max(10, Math.min(14, w * 0.18))}px Inter, sans-serif`;
+      const lines = wrapText(o.label, w - 12);
+      const maxLines = Math.min(4, lines.length);
+      for (let i = 0; i < maxLines; i++) {
+        ctx.fillText(lines[i], x + w / 2, Math.min(topH - 14, 70) - i * 15);
+        ctx.fillText(lines[i], x + w / 2, botY + 24 + i * 15);
+      }
+      ctx.restore();
     }
 
     function drawLobster() {
       const l = game.lobster;
       let y = l.y;
       let rot = l.rot;
-
       if (game.state === 'start') {
         y = game.h * 0.48 + Math.sin(l.bob) * 10;
         rot = Math.sin(l.bob * 1.2) * 0.08;
       }
-
       ctx.save();
       ctx.translate(l.x, y);
       ctx.rotate(rot);
-
-      // body
-      ctx.fillStyle = '#ff5f3f';
-      ctx.beginPath();
-      ctx.ellipse(0, 0, l.r * 1.1, l.r * 0.78, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // tail
-      ctx.fillStyle = '#ff7a52';
-      ctx.beginPath();
-      ctx.ellipse(-l.r * 0.95, 1, l.r * 0.45, l.r * 0.42, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // claws
-      ctx.fillStyle = '#ff7651';
-      roundRect(l.r * 0.5, -l.r * 0.22, l.r * 0.66, l.r * 0.3, 8);
-      ctx.fill();
-      roundRect(l.r * 0.45, l.r * 0.02, l.r * 0.64, l.r * 0.3, 8);
-      ctx.fill();
-
-      // eyes
-      ctx.fillStyle = '#fff';
-      ctx.beginPath();
-      ctx.arc(-l.r * 0.12, -l.r * 0.48, l.r * 0.16, 0, Math.PI * 2);
-      ctx.arc(l.r * 0.16, -l.r * 0.5, l.r * 0.16, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#111';
-      ctx.beginPath();
-      ctx.arc(-l.r * 0.08, -l.r * 0.48, l.r * 0.07, 0, Math.PI * 2);
-      ctx.arc(l.r * 0.2, -l.r * 0.5, l.r * 0.07, 0, Math.PI * 2);
-      ctx.fill();
-
-      // hard hat
-      ctx.fillStyle = '#ffd447';
-      roundRect(-l.r * 0.3, -l.r * 0.95, l.r * 0.7, l.r * 0.32, 6);
-      ctx.fill();
-      ctx.fillRect(-l.r * 0.37, -l.r * 0.72, l.r * 0.82, l.r * 0.09);
-
+      const size = 60;
+      if (lobsterImg.complete && lobsterImg.naturalWidth > 0) {
+        ctx.drawImage(lobsterImg, -size / 2, -size / 2, size, size);
+      } else {
+        // fallback while image loads
+        ctx.fillStyle = '#ff6a3d';
+        ctx.beginPath();
+        ctx.arc(0, 0, 22, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.restore();
     }
 
@@ -640,7 +589,6 @@
       if (!game.lastTime) game.lastTime = ts;
       const dt = Math.min(0.033, (ts - game.lastTime) / 1000);
       game.lastTime = ts;
-
       update(dt);
       draw();
       requestAnimationFrame(frame);
@@ -652,38 +600,29 @@
     }
 
     window.addEventListener('resize', resize);
-
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Space') {
         e.preventDefault();
-        if (game.state === 'dead') return;
-        onPrimaryInput();
+        if (game.state !== 'dead') onPrimaryInput();
       }
-      if (e.code === 'Enter' && game.state === 'dead') {
-        startGame();
-      }
+      if (e.code === 'Enter' && game.state === 'dead') startGame();
     }, { passive: false });
 
-    // touch / click for flap
     window.addEventListener('pointerdown', (e) => {
-      const target = e.target;
-      if (target.closest('button')) return;
-      if (game.state === 'dead') return;
-      onPrimaryInput();
+      if (e.target.closest('button')) return;
+      if (game.state !== 'dead') onPrimaryInput();
     });
 
-    retryBtn.addEventListener('click', () => startGame());
-
+    retryBtn.addEventListener('click', startGame);
     shareBtn.addEventListener('click', async () => {
       const text = `I survived ${game.score} updates in Flappy Claw 🦞 Rank: ${getRank(game.score)} — '${game.deathMessage}' Can you beat me? https://flappy-claw.vercel.app`;
       try {
         await navigator.clipboard.writeText(text);
         shareBtn.textContent = 'Copied!';
-        setTimeout(() => { shareBtn.textContent = 'Share Score'; }, 1200);
       } catch {
         shareBtn.textContent = 'Copy failed';
-        setTimeout(() => { shareBtn.textContent = 'Share Score'; }, 1200);
       }
+      setTimeout(() => { shareBtn.textContent = 'Share Score'; }, 1200);
     });
 
     resize();
