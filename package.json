@@ -2,5 +2,8 @@
   "name": "flappy-claw",
   "version": "1.0.0",
   "description": "Flappy Claw — Survive the Updates. A developer-themed Flappy Bird game.",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "@vercel/analytics": "^1.6.1"
+  }
 }
