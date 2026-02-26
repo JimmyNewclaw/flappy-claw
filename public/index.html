@@ -67,6 +67,12 @@
     .subtitle { margin: 7px 0 0; color: var(--muted); font-size: clamp(1rem, 3.2vw, 1.2rem); font-weight: 700; }
     .desc { margin: 14px 0 0; color: #e8edff; font-size: clamp(0.95rem, 2.7vw, 1.05rem); line-height: 1.45; }
     .small { margin-top: 14px; font-size: 0.84rem; color: #9eadde; }
+    @keyframes pulseCta {
+      0% { transform: scale(1); opacity: .86; }
+      50% { transform: scale(1.04); opacity: 1; }
+      100% { transform: scale(1); opacity: .86; }
+    }
+    .pulseCta { animation: pulseCta 1.2s ease-in-out infinite; font-weight: 900; color: #ffe07d; }
 
     .btnRow { margin-top: 16px; display: grid; gap: 10px; }
     .btn {
@@ -121,6 +127,23 @@
       cursor: pointer;
     }
 
+    .quickRetry {
+      position: fixed;
+      left: 50%;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      z-index: 35;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-size: 0.95rem;
+      font-weight: 900;
+      background: var(--accent);
+      color: #1a1308;
+      box-shadow: 0 8px 20px rgba(0,0,0,.35);
+      cursor: pointer;
+    }
+
     @media (min-width: 680px) {
       .btnRow.two { grid-template-columns: 1fr 1fr; }
       .nameRow { grid-template-columns: 1fr auto; }
@@ -131,6 +154,7 @@
 <body>
   <div id="gameWrap"><canvas id="game"></canvas></div>
   <button id="muteBtn" class="muteBtn" aria-label="Toggle sound">🔊</button>
+  <button id="quickRetryBtn" class="quickRetry hidden">⚡ Play Again in 1 Tap</button>
 
   <div class="hud" aria-live="polite">
     <div class="score" id="scoreLabel">0 updates survived</div>
@@ -145,7 +169,7 @@
       <p class="subtitle">Survive the Updates</p>
       <p class="desc" id="challengeText" style="display:none;"></p>
       <p class="desc" id="dailyTargetText" style="margin-top:8px;font-weight:900;color:#ffdf7a;"></p>
-      <p class="desc">Tap, click, or press Space to start instantly</p>
+      <p class="desc pulseCta" id="startPulseText">⚡ Tap anywhere to start instantly</p>
       <p class="small" id="bestScoreText" style="display:none;margin-top:6px;"></p>
       <p class="small" id="tipText" style="margin-top:6px;"></p>
       <div class="btnRow">
@@ -223,6 +247,7 @@
     const rankStatus = document.getElementById('rankStatus');
     const unlockStatus = document.getElementById('unlockStatus');
     const muteBtn = document.getElementById('muteBtn');
+    const quickRetryBtn = document.getElementById('quickRetryBtn');
 
     let lastSubmittedId = null;
     let currentBest = Number(localStorage.getItem('flappyClawBest') || 0);
@@ -502,6 +527,7 @@
     function startGame() {
       resetRun(); game.state = 'playing';
       newBestText.style.display = 'none';
+      quickRetryBtn.classList.add('hidden');
       startOverlay.classList.add('hidden'); deathOverlay.classList.add('hidden'); deathOverlay.classList.remove('show');
     }
 
@@ -538,6 +564,7 @@
       }
 
       deathOverlay.classList.remove('hidden'); requestAnimationFrame(() => deathOverlay.classList.add('show'));
+      quickRetryBtn.classList.remove('hidden');
       refreshLeaderboards();
     }
 
@@ -749,10 +776,12 @@
     window.addEventListener('pointerdown', (e) => {
       if (!e.target.closest('#muteBtn')) ensureAudio();
       if (e.target.closest('button,input')) return;
-      if (game.state !== 'dead') onPrimaryInput();
+      if (game.state === 'dead') { startGame(); return; }
+      onPrimaryInput();
     });
 
     retryBtn.addEventListener('click', startGame);
+    quickRetryBtn.addEventListener('click', startGame);
     shareBtn.addEventListener('click', async () => {
       const text = `I survived ${game.score} updates in Flappy Claw 🦞 Rank: ${getRank(game.score)} — '${game.deathMessage}' Can you beat me? https://flappy-claw.vercel.app`;
       try { await navigator.clipboard.writeText(text); shareBtn.textContent = 'Copied!'; }
