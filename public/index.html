@@ -11,7 +11,7 @@
   <meta property="og:url" content="https://flappy-claw.vercel.app">
   <meta property="og:image" content="https://flappy-claw.vercel.app/Jimmy_NewUserClaw.png">
   <meta property="og:type" content="website">
-  <meta name="twitter:card" content="summary">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Flappy Claw — Survive the Updates">
   <meta name="twitter:description" content="A lobster vs software updates. How many can you survive? 🦞">
   <meta name="twitter:image" content="https://flappy-claw.vercel.app/Jimmy_NewUserClaw.png">
@@ -63,6 +63,25 @@
       backdrop-filter: blur(8px); box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45); padding: 22px 18px;
       text-align: center; pointer-events: auto;
     }
+    .heroArt {
+      margin: 12px auto 4px;
+      width: min(84vw, 380px);
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(255,130,90,.25), rgba(90,170,255,.2));
+      box-shadow: inset 0 0 40px rgba(255,255,255,.06), 0 10px 20px rgba(0,0,0,.25);
+      padding: 10px 12px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: center;
+      text-align: left;
+    }
+    .heroArt img { width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)); }
+    .heroTitle { font-size: .9rem; font-weight: 900; color: #fff0b0; margin-bottom: 2px; }
+    .heroSub { font-size: .8rem; color: #d9e3ff; }
+    .chipRow { margin-top: 10px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .chip { font-size: .75rem; font-weight: 800; color: #ecf2ff; border: 1px solid rgba(255,255,255,.25); border-radius: 999px; padding: 6px 10px; background: rgba(255,255,255,.08); }
     .title { margin: 0; font-size: clamp(1.8rem, 7vw, 3rem); font-weight: 900; line-height: 1.05; }
     .subtitle { margin: 7px 0 0; color: var(--muted); font-size: clamp(1rem, 3.2vw, 1.2rem); font-weight: 700; }
     .desc { margin: 14px 0 0; color: #e8edff; font-size: clamp(0.95rem, 2.7vw, 1.05rem); line-height: 1.45; }
@@ -168,9 +187,18 @@
       <h1 class="title">🦞 Flappy Claw</h1>
       <p class="subtitle">Survive the Updates</p>
       <p class="desc" id="challengeText" style="display:none;"></p>
-      <p class="desc" id="dailyTargetText" style="margin-top:8px;font-weight:900;color:#ffdf7a;"></p>
+      <div class="heroArt">
+        <img src="/Jimmy_NewUserClaw.png" alt="Lobster mascot">
+        <div>
+          <div class="heroTitle">Chaos Runner 🦞</div>
+          <div class="heroSub">Dodge updates. Beat friends. Post your score.</div>
+        </div>
+      </div>
+      <div class="chipRow">
+        <div class="chip" id="dailyTargetText"></div>
+        <div class="chip" id="bestScoreText" style="display:none;"></div>
+      </div>
       <p class="desc pulseCta" id="startPulseText">⚡ Tap anywhere to start instantly</p>
-      <p class="small" id="bestScoreText" style="display:none;margin-top:6px;"></p>
       <p class="small" id="tipText" style="margin-top:6px;"></p>
       <div class="btnRow">
         <button class="btn btn-secondary" id="viewLeaderboardBtn">Leaderboard</button>
@@ -400,7 +428,7 @@
 
     function updateDailyTargetUi() {
       const target = getDailyTarget();
-      dailyTargetText.textContent = `Today's score to beat: ${target}`;
+      dailyTargetText.textContent = `Today's target: ${target}`;
       deathTarget.textContent = game.score >= target
         ? `✅ You beat today's target (${target})`
         : `🎯 Today's target is ${target}. One more run.`;
@@ -409,7 +437,7 @@
     function updateBestUi() {
       if (currentBest > 0) {
         bestScoreText.style.display = 'block';
-        bestScoreText.textContent = `Your Best: ${currentBest} updates survived`;
+        bestScoreText.textContent = `Best: ${currentBest}`;
       } else {
         bestScoreText.style.display = 'none';
       }
@@ -784,8 +812,16 @@
     quickRetryBtn.addEventListener('click', startGame);
     shareBtn.addEventListener('click', async () => {
       const text = `I survived ${game.score} updates in Flappy Claw 🦞 Rank: ${getRank(game.score)} — '${game.deathMessage}' Can you beat me? https://flappy-claw.vercel.app`;
-      try { await navigator.clipboard.writeText(text); shareBtn.textContent = 'Copied!'; }
-      catch { shareBtn.textContent = 'Copy failed'; }
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: 'Flappy Claw', text });
+          shareBtn.textContent = 'Shared!';
+        } else {
+          await navigator.clipboard.writeText(text);
+          shareBtn.textContent = 'Copied!';
+        }
+      }
+      catch { shareBtn.textContent = 'Share failed'; }
       setTimeout(() => { shareBtn.textContent = 'Share Score'; }, 1200);
     });
 
@@ -793,9 +829,17 @@
       const challenger = (playerName.value || 'Anonymous').trim().slice(0, 20) || 'Anonymous';
       const url = `https://flappy-claw.vercel.app?challenge=${encodeURIComponent(game.score)}&name=${encodeURIComponent(challenger)}`;
       const target = getDailyTarget();
-      const text = `I got ${game.score} in Flappy Claw 🦞 Can you beat me + today's target (${target})? ${url}`;
-      try { await navigator.clipboard.writeText(text); challengeBtn.textContent = 'Challenge Copied!'; }
-      catch { challengeBtn.textContent = 'Copy failed'; }
+      const text = `I got ${game.score} in Flappy Claw 🦞 Can you beat me + today's target (${target})?`;
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: 'Flappy Claw Challenge', text, url });
+          challengeBtn.textContent = 'Challenge Sent!';
+        } else {
+          await navigator.clipboard.writeText(`${text} ${url}`);
+          challengeBtn.textContent = 'Challenge Copied!';
+        }
+      }
+      catch { challengeBtn.textContent = 'Share failed'; }
       setTimeout(() => { challengeBtn.textContent = 'Challenge a Friend'; }, 1400);
     });
 
