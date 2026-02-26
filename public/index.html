@@ -144,7 +144,8 @@
       <h1 class="title">🦞 Flappy Claw</h1>
       <p class="subtitle">Survive the Updates</p>
       <p class="desc" id="challengeText" style="display:none;"></p>
-      <p class="desc">Tap, click, or press Space to start</p>
+      <p class="desc" id="dailyTargetText" style="margin-top:8px;font-weight:900;color:#ffdf7a;"></p>
+      <p class="desc">Tap, click, or press Space to start instantly</p>
       <p class="small" id="bestScoreText" style="display:none;margin-top:6px;"></p>
       <p class="small" id="tipText" style="margin-top:6px;"></p>
       <div class="btnRow">
@@ -162,6 +163,7 @@
       <p class="desc" id="newBestText" style="display:none;color:#ffcf4a;font-weight:900;">🎉 NEW PERSONAL BEST!</p>
       <p class="desc" id="deathScore">You survived 0 updates</p>
       <p class="desc" id="deathRank" style="margin-top:6px;font-weight:800;">Rank: Intern</p>
+      <p class="desc" id="deathTarget" style="margin-top:6px;color:#ffdf7a;font-weight:800;"></p>
       <p class="desc" id="deathMsg" style="margin-top:10px;color:#ffe8b8;"></p>
 
       <div class="btnRow">
@@ -200,6 +202,7 @@
     const deathOverlay = document.getElementById('deathOverlay');
     const deathScore = document.getElementById('deathScore');
     const deathRank = document.getElementById('deathRank');
+    const deathTarget = document.getElementById('deathTarget');
     const deathMsg = document.getElementById('deathMsg');
     const retryBtn = document.getElementById('retryBtn');
     const shareBtn = document.getElementById('shareBtn');
@@ -207,6 +210,7 @@
     const flashMsg = document.getElementById('flashMsg');
     const challengeText = document.getElementById('challengeText');
     const bestScoreText = document.getElementById('bestScoreText');
+    const dailyTargetText = document.getElementById('dailyTargetText');
     const tipText = document.getElementById('tipText');
     const newBestText = document.getElementById('newBestText');
 
@@ -362,6 +366,21 @@
       return randomPick(deathMessagesByTier[tier.key]);
     }
 
+    function getDailyTarget() {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 0);
+      const dayOfYear = Math.floor((now - start) / 86400000);
+      return 12 + ((dayOfYear * 7) % 25);
+    }
+
+    function updateDailyTargetUi() {
+      const target = getDailyTarget();
+      dailyTargetText.textContent = `Today's score to beat: ${target}`;
+      deathTarget.textContent = game.score >= target
+        ? `✅ You beat today's target (${target})`
+        : `🎯 Today's target is ${target}. One more run.`;
+    }
+
     function updateBestUi() {
       if (currentBest > 0) {
         bestScoreText.style.display = 'block';
@@ -494,6 +513,7 @@
       playDeathSound();
       deathScore.textContent = `You survived ${game.score} updates`;
       deathRank.textContent = `Rank: ${getRank(game.score)}`;
+      updateDailyTargetUi();
       deathMsg.textContent = game.deathMessage;
       submitStatus.textContent = '';
       rankStatus.textContent = '';
@@ -743,7 +763,9 @@
     challengeBtn.addEventListener('click', async () => {
       const challenger = (playerName.value || 'Anonymous').trim().slice(0, 20) || 'Anonymous';
       const url = `https://flappy-claw.vercel.app?challenge=${encodeURIComponent(game.score)}&name=${encodeURIComponent(challenger)}`;
-      try { await navigator.clipboard.writeText(url); challengeBtn.textContent = 'Challenge Copied!'; }
+      const target = getDailyTarget();
+      const text = `I got ${game.score} in Flappy Claw 🦞 Can you beat me + today's target (${target})? ${url}`;
+      try { await navigator.clipboard.writeText(text); challengeBtn.textContent = 'Challenge Copied!'; }
       catch { challengeBtn.textContent = 'Copy failed'; }
       setTimeout(() => { challengeBtn.textContent = 'Challenge a Friend'; }, 1400);
     });
@@ -765,6 +787,7 @@
     updateMuteUi();
     applyChallengeFromUrl();
     updateBestUi();
+    updateDailyTargetUi();
     startTipRotation();
     resize();
     updateHud();
