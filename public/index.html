@@ -115,8 +115,22 @@
     .btn-secondary { background: #eef2ff; color: #111935; }
 
     .hidden { display: none !important; }
-    .deathOverlay { background: rgba(4, 7, 15, 0.62); opacity: 0; transition: opacity 300ms ease; }
+    .deathOverlay {
+      background: rgba(4, 7, 15, 0.62);
+      opacity: 0;
+      transition: opacity 300ms ease;
+      align-content: start;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-top: max(10px, env(safe-area-inset-top));
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+    }
     .deathOverlay.show { opacity: 1; }
+    .deathPanel {
+      max-height: calc(100vh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
 
     .submitWrap { margin-top: 14px; text-align: left; }
     .submitLabel { font-size: .86rem; color: #c9d4ff; margin-bottom: 6px; }
@@ -221,7 +235,7 @@
   </div>
 
   <div class="overlay deathOverlay hidden" id="deathOverlay">
-    <div class="panel">
+    <div class="panel deathPanel">
       <h2 class="title" style="font-size:clamp(1.5rem,6vw,2.4rem);">UPDATE COMPLETE.</h2>
       <p class="subtitle" style="color:#ffd9d9;">Everything is broken.</p>
       <p class="desc" id="newBestText" style="display:none;color:#ffcf4a;font-weight:900;">🎉 NEW PERSONAL BEST!</p>
