@@ -82,6 +82,17 @@
     .heroSub { font-size: .8rem; color: #d9e3ff; }
     .chipRow { margin-top: 10px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
     .chip { font-size: .75rem; font-weight: 800; color: #ecf2ff; border: 1px solid rgba(255,255,255,.25); border-radius: 999px; padding: 6px 10px; background: rgba(255,255,255,.08); }
+    .sponsorBar {
+      margin: 10px auto 4px;
+      width: min(84vw, 380px);
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: .78rem;
+      font-weight: 800;
+      color: #ffe9a8;
+      background: rgba(255, 207, 74, 0.12);
+    }
     .top3Bar { margin-top: 10px; display: grid; gap: 6px; }
     .top3Item {
       border: 1px solid rgba(255,255,255,.15);
@@ -226,6 +237,7 @@
       </div>
       <div class="top3Bar" id="top3Bar"></div>
       <div class="top3Bar" id="tournamentTopBar"></div>
+      <div class="sponsorBar" id="sponsorBar">Sponsored this week: Your Brand Here — DM @JimmyNewclaw</div>
       <p class="desc pulseCta" id="startPulseText">⚡ Tap anywhere to start instantly</p>
       <p class="small" id="tipText" style="margin-top:6px;"></p>
       <div class="btnRow">
@@ -283,6 +295,7 @@
         <input id="tourneyName" class="nameInput" maxlength="20" value="Anonymous" />
         <div class="submitLabel" style="margin-top:8px;">Contact (email or Telegram)</div>
         <input id="tourneyContact" class="nameInput" maxlength="60" placeholder="you@example.com or @username" />
+        <input id="tourneyWebsite" class="nameInput hidden" maxlength="120" autocomplete="off" tabindex="-1" aria-hidden="true" />
         <div class="submitLabel" style="margin-top:8px;">Score to submit</div>
         <input id="tourneyScore" class="nameInput" readonly />
         <div class="btnRow two" style="margin-top:10px;">
@@ -340,6 +353,7 @@
     const tournamentStatus = document.getElementById('tournamentStatus');
     const tourneyName = document.getElementById('tourneyName');
     const tourneyContact = document.getElementById('tourneyContact');
+    const tourneyWebsite = document.getElementById('tourneyWebsite');
     const tourneyScore = document.getElementById('tourneyScore');
     const tourneyEndsText = document.getElementById('tourneyEndsText');
 
@@ -684,7 +698,14 @@
     async function submitTournamentScore() {
       const name = (tourneyName.value || 'Anonymous').trim().slice(0, 20) || 'Anonymous';
       const contact = (tourneyContact.value || '').trim().slice(0, 60);
+      if (tourneyWebsite.value.trim()) { tournamentStatus.textContent = 'Spam blocked.'; return; }
       if (!contact) { tournamentStatus.textContent = 'Contact is required.'; return; }
+      const lastSubmitMs = Number(localStorage.getItem('flappyClawTournamentLastSubmitMs') || 0);
+      if (Date.now() - lastSubmitMs < 60000) {
+        tournamentStatus.textContent = 'Please wait 1 minute before submitting again.';
+        return;
+      }
+
       tournamentStatus.textContent = 'Submitting...';
       submitTournamentBtn.disabled = true;
       try {
@@ -699,10 +720,14 @@
           body: JSON.stringify(payload)
         });
         if (!res.ok) throw new Error('Tournament submit failed');
+        localStorage.setItem('flappyClawTournamentLastSubmitMs', String(Date.now()));
         tournamentStatus.textContent = 'Tournament entry submitted!';
         await refreshTournament();
       } catch {
-        tournamentStatus.textContent = 'Submit failed (table may need setup).';
+        tournamentStatus.textContent = 'Submit failed. Table/policy may need setup. Saved locally.';
+        const pending = JSON.parse(localStorage.getItem('flappyClawTournamentPending') || '[]');
+        pending.push({ name, contact, score: game.score, created_at: new Date().toISOString() });
+        localStorage.setItem('flappyClawTournamentPending', JSON.stringify(pending.slice(-20)));
       } finally {
         submitTournamentBtn.disabled = false;
       }
