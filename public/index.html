@@ -222,8 +222,10 @@
       <div class="chipRow">
         <div class="chip" id="dailyTargetText"></div>
         <div class="chip" id="bestScoreText" style="display:none;"></div>
+        <div class="chip" id="tournamentCountdownText"></div>
       </div>
       <div class="top3Bar" id="top3Bar"></div>
+      <div class="top3Bar" id="tournamentTopBar"></div>
       <p class="desc pulseCta" id="startPulseText">⚡ Tap anywhere to start instantly</p>
       <p class="small" id="tipText" style="margin-top:6px;"></p>
       <div class="btnRow">
@@ -251,6 +253,9 @@
         <button class="btn btn-secondary" id="shareBtn">Share Score</button>
         <button class="btn btn-secondary" id="challengeBtn">Challenge a Friend</button>
       </div>
+      <div class="btnRow">
+        <button class="btn btn-primary" id="joinTournamentBtn">🏆 Join Weekly Tournament</button>
+      </div>
 
       <div class="submitWrap">
         <div class="submitLabel">Submit Score</div>
@@ -265,6 +270,28 @@
       <div id="rankStatus" class="statusMini"></div>
       <div id="unlockStatus" class="statusMini"></div>
       <div class="statusMini" style="text-align:center;opacity:.65;margin-top:10px;">flappy-claw.vercel.app 🦞</div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="tournamentOverlay">
+    <div class="panel deathPanel">
+      <h2 class="title" style="font-size:clamp(1.4rem,5vw,2rem);">🏆 Weekly Tournament</h2>
+      <p class="subtitle" id="tourneyEndsText">Ends: --</p>
+      <p class="desc">Submit your best score for this week. Prize pool starts at <strong>$100</strong>.</p>
+      <div class="submitWrap">
+        <div class="submitLabel">Name</div>
+        <input id="tourneyName" class="nameInput" maxlength="20" value="Anonymous" />
+        <div class="submitLabel" style="margin-top:8px;">Contact (email or Telegram)</div>
+        <input id="tourneyContact" class="nameInput" maxlength="60" placeholder="you@example.com or @username" />
+        <div class="submitLabel" style="margin-top:8px;">Score to submit</div>
+        <input id="tourneyScore" class="nameInput" readonly />
+        <div class="btnRow two" style="margin-top:10px;">
+          <button class="btn btn-primary" id="submitTournamentBtn">Submit Tournament Score</button>
+          <button class="btn btn-secondary" id="closeTournamentBtn">Close</button>
+        </div>
+        <div id="tournamentStatus" class="statusMini"></div>
+      </div>
+      <div class="leaderboard" id="tournamentLeaderboard"></div>
     </div>
   </div>
 
@@ -291,6 +318,8 @@
     const dailyTargetText = document.getElementById('dailyTargetText');
     const tipText = document.getElementById('tipText');
     const top3Bar = document.getElementById('top3Bar');
+    const tournamentTopBar = document.getElementById('tournamentTopBar');
+    const tournamentCountdownText = document.getElementById('tournamentCountdownText');
     const newBestText = document.getElementById('newBestText');
 
     const viewLeaderboardBtn = document.getElementById('viewLeaderboardBtn');
@@ -303,6 +332,16 @@
     const unlockStatus = document.getElementById('unlockStatus');
     const muteBtn = document.getElementById('muteBtn');
     const quickRetryBtn = document.getElementById('quickRetryBtn');
+    const joinTournamentBtn = document.getElementById('joinTournamentBtn');
+    const tournamentOverlay = document.getElementById('tournamentOverlay');
+    const closeTournamentBtn = document.getElementById('closeTournamentBtn');
+    const submitTournamentBtn = document.getElementById('submitTournamentBtn');
+    const tournamentLeaderboard = document.getElementById('tournamentLeaderboard');
+    const tournamentStatus = document.getElementById('tournamentStatus');
+    const tourneyName = document.getElementById('tourneyName');
+    const tourneyContact = document.getElementById('tourneyContact');
+    const tourneyScore = document.getElementById('tourneyScore');
+    const tourneyEndsText = document.getElementById('tourneyEndsText');
 
     let lastSubmittedId = null;
     let currentBest = Number(localStorage.getItem('flappyClawBest') || 0);
@@ -584,6 +623,91 @@
       }
     }
 
+    async function fetchTournamentTop() {
+      const weekStart = getWeekStartIso();
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/tournament_entries?select=id,name,score,created_at&created_at=gte.${encodeURIComponent(weekStart)}&order=score.desc&order=created_at.asc&limit=10`, {
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+      });
+      if (!res.ok) throw new Error('Tournament fetch failed');
+      return res.json();
+    }
+
+    function renderTournamentTop(rows) {
+      const top = (rows || []).slice(0, 3);
+      if (!top.length) {
+        tournamentTopBar.innerHTML = '<div class="top3Item">🏆 Weekly Tournament: be the first to submit.</div>';
+      } else {
+        tournamentTopBar.innerHTML = top.map((r, i) => `<div class="top3Item">🏆 Week #${i + 1} ${escapeHtml(r.name)} — <strong>${Number(r.score) || 0}</strong></div>`).join('');
+      }
+      tournamentLeaderboard.innerHTML = `<div class="lbTitle">Weekly Top 10</div>${(rows||[]).map((r,i)=>`<div class="lbRow"><div>#${i+1}</div><div>${escapeHtml(r.name)}</div><div class="lbScore">${Number(r.score)||0}</div></div>`).join('') || '<div class="lbMeta">No tournament entries yet.</div>'}`;
+    }
+
+    function getWeekEndDate() {
+      const d = new Date();
+      const day = d.getDay();
+      const daysToSunday = (7 - day) % 7;
+      const end = new Date(d);
+      end.setDate(d.getDate() + daysToSunday);
+      end.setHours(23, 59, 59, 999);
+      return end;
+    }
+
+    function getWeekStartIso() {
+      const d = new Date();
+      const day = d.getDay();
+      const diff = day === 0 ? -6 : (1 - day);
+      const start = new Date(d);
+      start.setDate(d.getDate() + diff);
+      start.setHours(0, 0, 0, 0);
+      return start.toISOString();
+    }
+
+    function updateTournamentCountdown() {
+      const end = getWeekEndDate();
+      const ms = end.getTime() - Date.now();
+      const h = Math.max(0, Math.floor(ms / 3600000));
+      const m = Math.max(0, Math.floor((ms % 3600000) / 60000));
+      tournamentCountdownText.textContent = `Tournament ends in ${h}h ${m}m`;
+      tourneyEndsText.textContent = `Ends: ${end.toLocaleString()}`;
+    }
+
+    async function refreshTournament() {
+      try {
+        const rows = await fetchTournamentTop();
+        renderTournamentTop(rows);
+      } catch {
+        tournamentTopBar.innerHTML = '<div class="top3Item">Tournament data unavailable.</div>';
+        tournamentLeaderboard.innerHTML = '<div class="lbTitle">Weekly Top 10</div><div class="lbMeta">Could not load tournament leaderboard.</div>';
+      }
+    }
+
+    async function submitTournamentScore() {
+      const name = (tourneyName.value || 'Anonymous').trim().slice(0, 20) || 'Anonymous';
+      const contact = (tourneyContact.value || '').trim().slice(0, 60);
+      if (!contact) { tournamentStatus.textContent = 'Contact is required.'; return; }
+      tournamentStatus.textContent = 'Submitting...';
+      submitTournamentBtn.disabled = true;
+      try {
+        const payload = [{ name, contact, score: game.score }];
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/tournament_entries`, {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('Tournament submit failed');
+        tournamentStatus.textContent = 'Tournament entry submitted!';
+        await refreshTournament();
+      } catch {
+        tournamentStatus.textContent = 'Submit failed (table may need setup).';
+      } finally {
+        submitTournamentBtn.disabled = false;
+      }
+    }
+
     async function submitScore() {
       const name = (playerName.value || 'Anonymous').trim().slice(0, 20) || 'Anonymous';
       submitStatus.textContent = 'Submitting...';
@@ -665,6 +789,7 @@
       playDeathSound();
       deathScore.textContent = `You survived ${game.score} updates`;
       deathRank.textContent = `Rank: ${getRank(game.score)}`;
+      tourneyScore.value = String(game.score);
       updateDailyTargetUi();
       deathMsg.textContent = game.deathMessage;
       submitStatus.textContent = '';
@@ -923,6 +1048,16 @@
 
     retryBtn.addEventListener('click', startGame);
     quickRetryBtn.addEventListener('click', startGame);
+    joinTournamentBtn.addEventListener('click', async () => {
+      tourneyScore.value = String(game.score || 0);
+      tournamentOverlay.classList.remove('hidden');
+      await refreshTournament();
+    });
+    closeTournamentBtn.addEventListener('click', () => {
+      tournamentOverlay.classList.add('hidden');
+    });
+    submitTournamentBtn.addEventListener('click', submitTournamentScore);
+
     shareBtn.addEventListener('click', async () => {
       const url = 'https://flappy-claw.vercel.app';
       const text = `I survived ${game.score} updates in Flappy Claw 🦞 Rank: ${getRank(game.score)} — '${game.deathMessage}' Can you beat me?`;
@@ -986,10 +1121,13 @@
     applyChallengeFromUrl();
     updateBestUi();
     updateDailyTargetUi();
+    updateTournamentCountdown();
+    setInterval(updateTournamentCountdown, 30000);
     startTipRotation();
     resize();
     updateHud();
     refreshLeaderboards();
+    refreshTournament();
     requestAnimationFrame(frame);
   </script>
 </body>
