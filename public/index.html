@@ -903,7 +903,7 @@
     window.addEventListener('pointerdown', (e) => {
       if (!e.target.closest('#muteBtn')) ensureAudio();
       if (e.target.closest('button,input')) return;
-      if (game.state === 'dead') { startGame(); return; }
+      if (game.state === 'dead') return;
       onPrimaryInput();
     });
 
