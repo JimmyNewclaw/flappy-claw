@@ -1,0 +1,23 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#190f31"/>
+      <stop offset="60%" stop-color="#172850"/>
+      <stop offset="100%" stop-color="#0f3a4f"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="70" y="70" width="1060" height="490" rx="32" fill="#0e1327" fill-opacity="0.7" stroke="#fff" stroke-opacity="0.16"/>
+
+  <text x="100" y="170" fill="#ffd27d" font-family="Inter, Arial, sans-serif" font-size="42" font-weight="900">FLAPPY CLAW CHALLENGE</text>
+  <text x="100" y="255" fill="#fff" font-family="Inter, Arial, sans-serif" font-size="88" font-weight="900">I GOT 24.</text>
+  <text x="100" y="330" fill="#d8e5ff" font-family="Inter, Arial, sans-serif" font-size="46" font-weight="700">Can you beat me?</text>
+
+  <g transform="translate(100,380)">
+    <rect width="420" height="86" rx="43" fill="#ffcf4a"/>
+    <text x="210" y="56" text-anchor="middle" fill="#22160d" font-family="Inter, Arial, sans-serif" font-size="42" font-weight="900">PLAY IN 1 TAP</text>
+  </g>
+
+  <image href="https://flappy-claw.vercel.app/Jimmy_NewUserClaw.png" x="860" y="200" width="230" height="230"/>
+  <text x="100" y="592" fill="#9ebeff" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">flappy-claw.vercel.app</text>
+</svg>
