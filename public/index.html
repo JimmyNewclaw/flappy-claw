@@ -82,6 +82,17 @@
     .heroSub { font-size: .8rem; color: #d9e3ff; }
     .chipRow { margin-top: 10px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
     .chip { font-size: .75rem; font-weight: 800; color: #ecf2ff; border: 1px solid rgba(255,255,255,.25); border-radius: 999px; padding: 6px 10px; background: rgba(255,255,255,.08); }
+    .top3Bar { margin-top: 10px; display: grid; gap: 6px; }
+    .top3Item {
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 10px;
+      background: rgba(255,255,255,.06);
+      padding: 7px 10px;
+      font-size: .8rem;
+      color: #e8efff;
+      text-align: left;
+    }
+    .pulseHot { animation: pulseCta 0.9s ease-in-out infinite; }
     .title { margin: 0; font-size: clamp(1.8rem, 7vw, 3rem); font-weight: 900; line-height: 1.05; }
     .subtitle { margin: 7px 0 0; color: var(--muted); font-size: clamp(1rem, 3.2vw, 1.2rem); font-weight: 700; }
     .desc { margin: 14px 0 0; color: #e8edff; font-size: clamp(0.95rem, 2.7vw, 1.05rem); line-height: 1.45; }
@@ -198,6 +209,7 @@
         <div class="chip" id="dailyTargetText"></div>
         <div class="chip" id="bestScoreText" style="display:none;"></div>
       </div>
+      <div class="top3Bar" id="top3Bar"></div>
       <p class="desc pulseCta" id="startPulseText">⚡ Tap anywhere to start instantly</p>
       <p class="small" id="tipText" style="margin-top:6px;"></p>
       <div class="btnRow">
@@ -264,6 +276,7 @@
     const bestScoreText = document.getElementById('bestScoreText');
     const dailyTargetText = document.getElementById('dailyTargetText');
     const tipText = document.getElementById('tipText');
+    const top3Bar = document.getElementById('top3Bar');
     const newBestText = document.getElementById('newBestText');
 
     const viewLeaderboardBtn = document.getElementById('viewLeaderboardBtn');
@@ -434,6 +447,16 @@
         : `🎯 Today's target is ${target}. One more run.`;
     }
 
+    function buildChallengeUrl() {
+      const challenger = (playerName.value || 'Anonymous').trim().slice(0, 20) || 'Anonymous';
+      return `https://flappy-claw.vercel.app?challenge=${encodeURIComponent(game.score)}&name=${encodeURIComponent(challenger)}`;
+    }
+
+    function buildChallengeText() {
+      const target = getDailyTarget();
+      return `I got ${game.score} in Flappy Claw 🦞 Can you beat me + today's target (${target})?`;
+    }
+
     function updateBestUi() {
       if (currentBest > 0) {
         bestScoreText.style.display = 'block';
@@ -477,14 +500,27 @@
       el.innerHTML = `<div class="lbTitle">Top 10</div>${items || '<div class="lbMeta">No scores yet.</div>'}`;
     }
 
+    function renderTop3(rows) {
+      const top = (rows || []).slice(0, 3);
+      if (!top.length) {
+        top3Bar.innerHTML = '<div class="top3Item">Top players will appear here.</div>';
+        return;
+      }
+      top3Bar.innerHTML = top.map((r, i) =>
+        `<div class="top3Item">#${i + 1} ${escapeHtml(r.name)} — <strong>${Number(r.score) || 0}</strong></div>`
+      ).join('');
+    }
+
     async function refreshLeaderboards() {
       try {
         const rows = await fetchLeaderboard();
         renderLeaderboard(startLeaderboard, rows);
         renderLeaderboard(deathLeaderboard, rows);
+        renderTop3(rows);
       } catch {
         startLeaderboard.innerHTML = '<div class="lbTitle">Top 10</div><div class="lbMeta">Could not load leaderboard.</div>';
         deathLeaderboard.innerHTML = '<div class="lbTitle">Top 10</div><div class="lbMeta">Could not load leaderboard.</div>';
+        top3Bar.innerHTML = '<div class="top3Item">Could not load top players.</div>';
       }
     }
 
@@ -556,6 +592,8 @@
       resetRun(); game.state = 'playing';
       newBestText.style.display = 'none';
       quickRetryBtn.classList.add('hidden');
+      challengeBtn.classList.remove('pulseHot');
+      challengeBtn.textContent = 'Challenge a Friend';
       startOverlay.classList.add('hidden'); deathOverlay.classList.add('hidden'); deathOverlay.classList.remove('show');
     }
 
@@ -593,6 +631,21 @@
 
       deathOverlay.classList.remove('hidden'); requestAnimationFrame(() => deathOverlay.classList.add('show'));
       quickRetryBtn.classList.remove('hidden');
+
+      challengeBtn.classList.remove('pulseHot');
+      if (game.score >= 10) {
+        challengeBtn.classList.add('pulseHot');
+        challengeBtn.textContent = '🔥 Share This Run';
+        const text = buildChallengeText();
+        const url = buildChallengeUrl();
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(`${text} ${url}`)
+            .then(() => { rankStatus.textContent = 'Challenge copied — paste to a friend.'; })
+            .catch(() => { rankStatus.textContent = 'Good run. Tap Share This Run.'; });
+        } else {
+          rankStatus.textContent = 'Good run. Tap Share This Run.';
+        }
+      }
       refreshLeaderboards();
     }
 
@@ -826,10 +879,8 @@
     });
 
     challengeBtn.addEventListener('click', async () => {
-      const challenger = (playerName.value || 'Anonymous').trim().slice(0, 20) || 'Anonymous';
-      const url = `https://flappy-claw.vercel.app?challenge=${encodeURIComponent(game.score)}&name=${encodeURIComponent(challenger)}`;
-      const target = getDailyTarget();
-      const text = `I got ${game.score} in Flappy Claw 🦞 Can you beat me + today's target (${target})?`;
+      const url = buildChallengeUrl();
+      const text = buildChallengeText();
       try {
         if (navigator.share) {
           await navigator.share({ title: 'Flappy Claw Challenge', text, url });
@@ -840,7 +891,10 @@
         }
       }
       catch { challengeBtn.textContent = 'Share failed'; }
-      setTimeout(() => { challengeBtn.textContent = 'Challenge a Friend'; }, 1400);
+      setTimeout(() => {
+        challengeBtn.classList.remove('pulseHot');
+        challengeBtn.textContent = 'Challenge a Friend';
+      }, 1400);
     });
 
     viewLeaderboardBtn.addEventListener('click', async () => {
