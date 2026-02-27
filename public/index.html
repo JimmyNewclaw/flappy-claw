@@ -234,6 +234,7 @@
         <div class="chip" id="dailyTargetText"></div>
         <div class="chip" id="bestScoreText" style="display:none;"></div>
         <div class="chip" id="tournamentCountdownText"></div>
+        <div class="chip" id="recruitChip">Recruits: 0</div>
       </div>
       <div class="top3Bar" id="top3Bar"></div>
       <div class="top3Bar" id="tournamentTopBar"></div>
@@ -333,6 +334,7 @@
     const top3Bar = document.getElementById('top3Bar');
     const tournamentTopBar = document.getElementById('tournamentTopBar');
     const tournamentCountdownText = document.getElementById('tournamentCountdownText');
+    const recruitChip = document.getElementById('recruitChip');
     const newBestText = document.getElementById('newBestText');
 
     const viewLeaderboardBtn = document.getElementById('viewLeaderboardBtn');
@@ -359,6 +361,8 @@
 
     let lastSubmittedId = null;
     let currentBest = Number(localStorage.getItem('flappyClawBest') || 0);
+    let referralCreditedThisRun = false;
+    const playerRefId = getOrCreateRefId();
 
     const tips = [
       'Pro tip: Don\'t update on Fridays',
@@ -404,6 +408,57 @@
     };
 
     const randomPick = (arr) => arr[(Math.random() * arr.length) | 0];
+
+    function getOrCreateRefId() {
+      let id = localStorage.getItem('flappyClawRefId');
+      if (!id) {
+        id = Math.random().toString(36).slice(2, 10);
+        localStorage.setItem('flappyClawRefId', id);
+      }
+      return id;
+    }
+
+    function getRecruitCount() {
+      return Number(localStorage.getItem('flappyClawRecruitCount') || 0);
+    }
+
+    function updateRecruitUi() {
+      recruitChip.textContent = `Recruits: ${getRecruitCount()}`;
+    }
+
+    function registerIncomingReferral() {
+      const params = new URLSearchParams(window.location.search);
+      const ref = (params.get('ref') || '').trim();
+      if (!ref || ref === playerRefId) return;
+      if (!localStorage.getItem('flappyClawReferredBy')) {
+        localStorage.setItem('flappyClawReferredBy', ref);
+      }
+    }
+
+    function maybeRewardReferrer(score) {
+      if (referralCreditedThisRun || score < 10) return;
+      const ref = localStorage.getItem('flappyClawReferredBy');
+      if (!ref) return;
+      const rewardKey = `flappyClawRefRewarded:${ref}`;
+      if (localStorage.getItem(rewardKey)) return;
+
+      localStorage.setItem(rewardKey, '1');
+      const pending = JSON.parse(localStorage.getItem('flappyClawReferralRewards') || '{}');
+      pending[ref] = (pending[ref] || 0) + 1;
+      localStorage.setItem('flappyClawReferralRewards', JSON.stringify(pending));
+      referralCreditedThisRun = true;
+      unlockStatus.textContent = '🏅 Referral unlocked: Claw Recruiter event recorded.';
+    }
+
+    function applyPendingReferralRewards() {
+      const pending = JSON.parse(localStorage.getItem('flappyClawReferralRewards') || '{}');
+      const mine = Number(pending[playerRefId] || 0);
+      if (!mine) return;
+      const current = getRecruitCount();
+      localStorage.setItem('flappyClawRecruitCount', String(current + mine));
+      delete pending[playerRefId];
+      localStorage.setItem('flappyClawReferralRewards', JSON.stringify(pending));
+    }
 
     let isMuted = localStorage.getItem('flappyClawMuted') === '1' ? true : false;
     let audioCtx = null;
@@ -494,6 +549,13 @@
       return { key: 'intern', label: 'Intern-tier' };
     }
 
+    function getRecruiterTitle() {
+      const recruits = getRecruitCount();
+      if (recruits >= 10) return ' • Claw Recruiter 🔥';
+      if (recruits >= 1) return ' • Recruiter 🏅';
+      return '';
+    }
+
     function getDeathMessageForScore(s) {
       const tier = getRoastTier(s);
       return randomPick(deathMessagesByTier[tier.key]);
@@ -516,7 +578,7 @@
 
     function buildChallengeUrl() {
       const challenger = (playerName.value || 'Anonymous').trim().slice(0, 20) || 'Anonymous';
-      return `https://flappy-claw.vercel.app?challenge=${encodeURIComponent(game.score)}&name=${encodeURIComponent(challenger)}`;
+      return `https://flappy-claw.vercel.app?challenge=${encodeURIComponent(game.score)}&name=${encodeURIComponent(challenger)}&ref=${encodeURIComponent(playerRefId)}`;
     }
 
     function buildChallengeText() {
@@ -799,6 +861,7 @@
 
     function startGame() {
       resetRun(); game.state = 'playing';
+      referralCreditedThisRun = false;
       newBestText.style.display = 'none';
       quickRetryBtn.classList.add('hidden');
       challengeBtn.classList.remove('pulseHot');
@@ -813,7 +876,7 @@
       game.shakeTime = 0.2;
       playDeathSound();
       deathScore.textContent = `You survived ${game.score} updates`;
-      deathRank.textContent = `Rank: ${getRank(game.score)}`;
+      deathRank.textContent = `Rank: ${getRank(game.score)}${getRecruiterTitle()}`;
       tourneyScore.value = String(game.score);
       updateDailyTargetUi();
       deathMsg.textContent = game.deathMessage;
@@ -828,6 +891,8 @@
       } else {
         newBestText.style.display = 'none';
       }
+
+      maybeRewardReferrer(game.score);
 
       const tier = getRoastTier(game.score);
       const unlocked = JSON.parse(localStorage.getItem('flappyClawUnlockedTiers') || '[]');
@@ -866,7 +931,7 @@
       playFlapSound();
     }
 
-    function updateHud() { scoreLabel.textContent = `${game.score} updates survived`; rankLabel.textContent = getRank(game.score); }
+    function updateHud() { scoreLabel.textContent = `${game.score} updates survived`; rankLabel.textContent = getRank(game.score) + getRecruiterTitle(); }
     function scorePop() { scoreLabel.classList.remove('pop'); void scoreLabel.offsetWidth; scoreLabel.classList.add('pop'); setTimeout(() => scoreLabel.classList.remove('pop'), 210); }
     function showFlash(text) { flashMsg.textContent = text; flashMsg.classList.add('show'); setTimeout(() => flashMsg.classList.remove('show'), 900); }
 
@@ -1142,6 +1207,9 @@
       if (!isMuted) ensureAudio();
     });
 
+    registerIncomingReferral();
+    applyPendingReferralRewards();
+    updateRecruitUi();
     updateMuteUi();
     applyChallengeFromUrl();
     updateBestUi();
