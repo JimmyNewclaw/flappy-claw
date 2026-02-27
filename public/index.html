@@ -457,6 +457,52 @@
       return `I got ${game.score} in Flappy Claw 🦞 Can you beat me + today's target (${target})?`;
     }
 
+    async function buildDynamicShareImage(mode = 'score') {
+      const w = 1200, h = 630;
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const x = c.getContext('2d');
+
+      const g = x.createLinearGradient(0, 0, w, h);
+      g.addColorStop(0, '#121b3b');
+      g.addColorStop(0.55, '#1a2e61');
+      g.addColorStop(1, '#331326');
+      x.fillStyle = g;
+      x.fillRect(0, 0, w, h);
+
+      x.fillStyle = 'rgba(255,255,255,0.08)';
+      x.fillRect(60, 56, w - 120, h - 112);
+
+      x.fillStyle = '#ffd68e';
+      x.font = '900 48px Inter, Arial, sans-serif';
+      x.fillText('🦞 FLAPPY CLAW', 100, 150);
+
+      const big = mode === 'challenge' ? `I GOT ${game.score}` : `${game.score} UPDATES`;
+      x.fillStyle = '#ffffff';
+      x.font = '900 104px Inter, Arial, sans-serif';
+      x.fillText(big, 100, 275);
+
+      x.fillStyle = '#d8e5ff';
+      x.font = '700 42px Inter, Arial, sans-serif';
+      x.fillText(`Rank: ${getRank(game.score)}`, 100, 345);
+
+      x.fillStyle = '#ffcf4a';
+      x.font = '900 46px Inter, Arial, sans-serif';
+      x.fillText(mode === 'challenge' ? 'Can you beat me?' : 'Can you survive more?', 100, 420);
+
+      x.fillStyle = '#a9c3ff';
+      x.font = '700 30px Inter, Arial, sans-serif';
+      x.fillText('flappy-claw.vercel.app', 100, 560);
+
+      if (lobsterImgLoaded) {
+        x.drawImage(lobsterImg, 860, 180, 230, 230);
+      }
+
+      const blob = await new Promise(res => c.toBlob(res, 'image/png', 0.95));
+      if (!blob) return null;
+      return new File([blob], `flappy-claw-${mode}-${game.score}.png`, { type: 'image/png' });
+    }
+
     function updateBestUi() {
       if (currentBest > 0) {
         bestScoreText.style.display = 'block';
@@ -864,13 +910,19 @@
     retryBtn.addEventListener('click', startGame);
     quickRetryBtn.addEventListener('click', startGame);
     shareBtn.addEventListener('click', async () => {
-      const text = `I survived ${game.score} updates in Flappy Claw 🦞 Rank: ${getRank(game.score)} — '${game.deathMessage}' Can you beat me? https://flappy-claw.vercel.app`;
+      const url = 'https://flappy-claw.vercel.app';
+      const text = `I survived ${game.score} updates in Flappy Claw 🦞 Rank: ${getRank(game.score)} — '${game.deathMessage}' Can you beat me?`;
       try {
         if (navigator.share) {
-          await navigator.share({ title: 'Flappy Claw', text });
+          const file = await buildDynamicShareImage('score');
+          if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ title: 'Flappy Claw', text, url, files: [file] });
+          } else {
+            await navigator.share({ title: 'Flappy Claw', text, url });
+          }
           shareBtn.textContent = 'Shared!';
         } else {
-          await navigator.clipboard.writeText(text);
+          await navigator.clipboard.writeText(`${text} ${url}`);
           shareBtn.textContent = 'Copied!';
         }
       }
@@ -883,7 +935,12 @@
       const text = buildChallengeText();
       try {
         if (navigator.share) {
-          await navigator.share({ title: 'Flappy Claw Challenge', text, url });
+          const file = await buildDynamicShareImage('challenge');
+          if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ title: 'Flappy Claw Challenge', text, url, files: [file] });
+          } else {
+            await navigator.share({ title: 'Flappy Claw Challenge', text, url });
+          }
           challengeBtn.textContent = 'Challenge Sent!';
         } else {
           await navigator.clipboard.writeText(`${text} ${url}`);
