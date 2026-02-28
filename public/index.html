@@ -236,6 +236,7 @@
         <div class="chip" id="tournamentCountdownText"></div>
         <div class="chip" id="recruitChip">Recruits: 0</div>
         <div class="chip" id="streakChip">Streak: 0d</div>
+        <div class="chip" id="missionChip">Mission: Beat 5</div>
       </div>
       <div class="top3Bar" id="top3Bar"></div>
       <div class="top3Bar" id="tournamentTopBar"></div>
@@ -260,8 +261,9 @@
       <p class="desc" id="deathTarget" style="margin-top:6px;color:#ffdf7a;font-weight:800;"></p>
       <p class="desc" id="deathMsg" style="margin-top:10px;color:#ffe8b8;"></p>
 
-      <div class="btnRow">
+      <div class="btnRow two">
         <button class="btn btn-primary" id="retryBtn">Try Again</button>
+        <button class="btn btn-secondary" id="continueBtn">Continue (1x)</button>
       </div>
       <div class="btnRow two">
         <button class="btn btn-secondary" id="shareBtn">Share Score</button>
@@ -328,6 +330,7 @@
     const deathTarget = document.getElementById('deathTarget');
     const deathMsg = document.getElementById('deathMsg');
     const retryBtn = document.getElementById('retryBtn');
+    const continueBtn = document.getElementById('continueBtn');
     const shareBtn = document.getElementById('shareBtn');
     const challengeBtn = document.getElementById('challengeBtn');
     const flashMsg = document.getElementById('flashMsg');
@@ -340,6 +343,7 @@
     const tournamentCountdownText = document.getElementById('tournamentCountdownText');
     const recruitChip = document.getElementById('recruitChip');
     const streakChip = document.getElementById('streakChip');
+    const missionChip = document.getElementById('missionChip');
     const newBestText = document.getElementById('newBestText');
 
     const viewLeaderboardBtn = document.getElementById('viewLeaderboardBtn');
@@ -369,6 +373,7 @@
     let currentBest = Number(localStorage.getItem('flappyClawBest') || 0);
     let referralCreditedThisRun = false;
     let pendingClaimScoreId = null;
+    let usedContinueThisRun = false;
     const playerRefId = getOrCreateRefId();
 
     const tips = [
@@ -449,6 +454,42 @@
       localStorage.setItem('flappyClawStreakDays', String(streak));
       streakChip.textContent = `Streak: ${streak}d`;
       return streak;
+    }
+
+    function getMissionTarget() {
+      const idx = Number(localStorage.getItem('flappyClawMissionIndex') || 0);
+      const missions = [5, 10, 15];
+      return missions[Math.min(idx, missions.length - 1)];
+    }
+
+    function updateMissionUi() {
+      const idx = Number(localStorage.getItem('flappyClawMissionIndex') || 0);
+      if (idx >= 3) {
+        missionChip.textContent = 'Mission: Complete ✅';
+        return;
+      }
+      const target = getMissionTarget();
+      missionChip.textContent = `Mission: Beat ${target}`;
+    }
+
+    function completeMissionIfNeeded(score) {
+      const missions = [5, 10, 15];
+      let idx = Number(localStorage.getItem('flappyClawMissionIndex') || 0);
+      if (idx >= missions.length) {
+        missionChip.textContent = 'Mission: Complete ✅';
+        return;
+      }
+      if (score >= missions[idx]) {
+        idx += 1;
+        localStorage.setItem('flappyClawMissionIndex', String(idx));
+        if (idx >= missions.length) {
+          missionChip.textContent = 'Mission: Complete ✅';
+          unlockStatus.textContent = '🏆 Mission chain complete!';
+        } else {
+          missionChip.textContent = `Mission: Beat ${missions[idx]}`;
+          unlockStatus.textContent = `✅ Mission cleared. Next: Beat ${missions[idx]}`;
+        }
+      }
     }
 
     async function autoSaveScoreIfEligible() {
@@ -939,6 +980,9 @@
     function startGame() {
       resetRun(); game.state = 'playing';
       referralCreditedThisRun = false;
+      usedContinueThisRun = false;
+      continueBtn.disabled = false;
+      continueBtn.textContent = 'Continue (1x)';
       newBestText.style.display = 'none';
       quickRetryBtn.classList.add('hidden');
       claimScoreBtn.classList.add('hidden');
@@ -946,6 +990,20 @@
       challengeBtn.classList.remove('pulseHot');
       challengeBtn.textContent = 'Challenge a Friend';
       startOverlay.classList.add('hidden'); deathOverlay.classList.add('hidden'); deathOverlay.classList.remove('show');
+    }
+
+    function continueRun() {
+      if (game.state !== 'dead' || usedContinueThisRun) return;
+      usedContinueThisRun = true;
+      continueBtn.disabled = true;
+      continueBtn.textContent = 'Continue used';
+      deathOverlay.classList.add('hidden');
+      deathOverlay.classList.remove('show');
+      game.state = 'playing';
+      game.lobster.vy = -120;
+      game.lobster.y = Math.max(80, Math.min(game.h - 120, game.lobster.y));
+      game.obstacles = game.obstacles.filter(o => Math.abs((o.x + o.w / 2) - game.lobster.x) > 130);
+      showFlash('Second chance!');
     }
 
     function killGame() {
@@ -971,6 +1029,7 @@
         newBestText.style.display = 'none';
       }
 
+      completeMissionIfNeeded(game.score);
       maybeRewardReferrer(game.score);
 
       const tier = getRoastTier(game.score);
@@ -984,6 +1043,8 @@
       }
 
       deathOverlay.classList.remove('hidden'); requestAnimationFrame(() => deathOverlay.classList.add('show'));
+      continueBtn.disabled = usedContinueThisRun;
+      continueBtn.textContent = usedContinueThisRun ? 'Continue used' : 'Continue (1x)';
       quickRetryBtn.classList.remove('hidden');
       autoSaveScoreIfEligible();
 
@@ -1217,6 +1278,7 @@
     });
 
     retryBtn.addEventListener('click', startGame);
+    continueBtn.addEventListener('click', continueRun);
     quickRetryBtn.addEventListener('click', startGame);
     joinTournamentBtn.addEventListener('click', async () => {
       tourneyScore.value = String(game.score || 0);
@@ -1291,6 +1353,7 @@
     registerIncomingReferral();
     applyPendingReferralRewards();
     updateRecruitUi();
+    updateMissionUi();
     const streakNow = updateStreak();
     if (streakNow > 1) {
       unlockStatus.textContent = `🔥 ${streakNow}-day streak! Keep it going.`;
