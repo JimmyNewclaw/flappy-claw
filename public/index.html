@@ -480,14 +480,17 @@
         return;
       }
       if (score >= missions[idx]) {
+        const cleared = missions[idx];
         idx += 1;
         localStorage.setItem('flappyClawMissionIndex', String(idx));
         if (idx >= missions.length) {
           missionChip.textContent = 'Mission: Complete ✅';
           unlockStatus.textContent = '🏆 Mission chain complete!';
+          showFlash('🏆 ALL MISSIONS COMPLETE');
         } else {
           missionChip.textContent = `Mission: Beat ${missions[idx]}`;
           unlockStatus.textContent = `✅ Mission cleared. Next: Beat ${missions[idx]}`;
+          showFlash(`✅ Mission Beat ${cleared}`);
         }
       }
     }
