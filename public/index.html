@@ -370,6 +370,7 @@
     let referralCreditedThisRun = false;
     let pendingClaimScoreId = null;
     let usedContinueThisRun = false;
+    let challengeGateActive = false;
     const playerRefId = getOrCreateRefId();
 
     const tips = [
@@ -980,6 +981,7 @@
       resetRun(); game.state = 'playing';
       referralCreditedThisRun = false;
       usedContinueThisRun = false;
+      challengeGateActive = false;
       retryBtn.textContent = 'Continue (1x)';
       newBestText.style.display = 'none';
       claimScoreBtn.classList.add('hidden');
@@ -992,6 +994,7 @@
     function continueRun() {
       if (game.state !== 'dead' || usedContinueThisRun) return;
       usedContinueThisRun = true;
+      challengeGateActive = false;
       retryBtn.textContent = 'Try Again';
       deathOverlay.classList.add('hidden');
       deathOverlay.classList.remove('show');
@@ -1039,7 +1042,8 @@
       }
 
       deathOverlay.classList.remove('hidden'); requestAnimationFrame(() => deathOverlay.classList.add('show'));
-      retryBtn.textContent = usedContinueThisRun ? 'Try Again' : 'Continue (1x)';
+      challengeGateActive = game.score >= 10 && !usedContinueThisRun;
+      retryBtn.textContent = challengeGateActive ? 'Challenge to Unlock Continue' : (usedContinueThisRun ? 'Try Again' : 'Continue (1x)');
       autoSaveScoreIfEligible();
 
       challengeBtn.classList.remove('pulseHot');
@@ -1271,8 +1275,18 @@
       onPrimaryInput();
     });
 
-    retryBtn.addEventListener('click', () => {
-      if (game.state === 'dead' && !usedContinueThisRun) continueRun();
+    retryBtn.addEventListener('click', async () => {
+      if (game.state !== 'dead') { startGame(); return; }
+      if (challengeGateActive) {
+        const shared = await runChallengeShare(true);
+        if (shared) {
+          challengeGateActive = false;
+          retryBtn.textContent = 'Continue (1x)';
+          continueRun();
+        }
+        return;
+      }
+      if (!usedContinueThisRun) continueRun();
       else startGame();
     });
     joinTournamentBtn.addEventListener('click', async () => {
@@ -1306,7 +1320,7 @@
       setTimeout(() => { shareBtn.textContent = 'Share Score'; }, 1200);
     });
 
-    challengeBtn.addEventListener('click', async () => {
+    async function runChallengeShare(fromGate = false) {
       const url = buildChallengeUrl();
       const text = buildChallengeText();
       try {
@@ -1317,17 +1331,27 @@
           } else {
             await navigator.share({ title: 'Flappy Claw Challenge', text, url });
           }
-          challengeBtn.textContent = 'Challenge Sent!';
+          challengeBtn.textContent = fromGate ? 'Unlocked!' : 'Challenge Sent!';
         } else {
           await navigator.clipboard.writeText(`${text} ${url}`);
-          challengeBtn.textContent = 'Challenge Copied!';
+          challengeBtn.textContent = fromGate ? 'Copied + Unlocked!' : 'Challenge Copied!';
         }
+        return true;
       }
-      catch { challengeBtn.textContent = 'Share failed'; }
-      setTimeout(() => {
-        challengeBtn.classList.remove('pulseHot');
-        challengeBtn.textContent = 'Challenge a Friend';
-      }, 1400);
+      catch {
+        challengeBtn.textContent = 'Share failed';
+        return false;
+      }
+      finally {
+        setTimeout(() => {
+          challengeBtn.classList.remove('pulseHot');
+          challengeBtn.textContent = 'Challenge a Friend';
+        }, 1400);
+      }
+    }
+
+    challengeBtn.addEventListener('click', async () => {
+      await runChallengeShare(false);
     });
 
     viewLeaderboardBtn.addEventListener('click', async () => {
