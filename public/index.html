@@ -209,7 +209,6 @@
 <body>
   <div id="gameWrap"><canvas id="game"></canvas></div>
   <button id="muteBtn" class="muteBtn" aria-label="Toggle sound">🔊</button>
-  <button id="quickRetryBtn" class="quickRetry hidden">⚡ Play Again in 1 Tap</button>
 
   <div class="hud" aria-live="polite">
     <div class="score" id="scoreLabel">0 updates survived</div>
@@ -261,9 +260,8 @@
       <p class="desc" id="deathTarget" style="margin-top:6px;color:#ffdf7a;font-weight:800;"></p>
       <p class="desc" id="deathMsg" style="margin-top:10px;color:#ffe8b8;"></p>
 
-      <div class="btnRow two">
-        <button class="btn btn-primary" id="retryBtn">Try Again</button>
-        <button class="btn btn-secondary" id="continueBtn">Continue (1x)</button>
+      <div class="btnRow">
+        <button class="btn btn-primary" id="retryBtn">Continue (1x)</button>
       </div>
       <div class="btnRow two">
         <button class="btn btn-secondary" id="shareBtn">Share Score</button>
@@ -330,7 +328,6 @@
     const deathTarget = document.getElementById('deathTarget');
     const deathMsg = document.getElementById('deathMsg');
     const retryBtn = document.getElementById('retryBtn');
-    const continueBtn = document.getElementById('continueBtn');
     const shareBtn = document.getElementById('shareBtn');
     const challengeBtn = document.getElementById('challengeBtn');
     const flashMsg = document.getElementById('flashMsg');
@@ -356,7 +353,6 @@
     const rankStatus = document.getElementById('rankStatus');
     const unlockStatus = document.getElementById('unlockStatus');
     const muteBtn = document.getElementById('muteBtn');
-    const quickRetryBtn = document.getElementById('quickRetryBtn');
     const joinTournamentBtn = document.getElementById('joinTournamentBtn');
     const tournamentOverlay = document.getElementById('tournamentOverlay');
     const closeTournamentBtn = document.getElementById('closeTournamentBtn');
@@ -984,10 +980,8 @@
       resetRun(); game.state = 'playing';
       referralCreditedThisRun = false;
       usedContinueThisRun = false;
-      continueBtn.disabled = false;
-      continueBtn.textContent = 'Continue (1x)';
+      retryBtn.textContent = 'Continue (1x)';
       newBestText.style.display = 'none';
-      quickRetryBtn.classList.add('hidden');
       claimScoreBtn.classList.add('hidden');
       pendingClaimScoreId = null;
       challengeBtn.classList.remove('pulseHot');
@@ -998,8 +992,7 @@
     function continueRun() {
       if (game.state !== 'dead' || usedContinueThisRun) return;
       usedContinueThisRun = true;
-      continueBtn.disabled = true;
-      continueBtn.textContent = 'Continue used';
+      retryBtn.textContent = 'Try Again';
       deathOverlay.classList.add('hidden');
       deathOverlay.classList.remove('show');
       game.state = 'playing';
@@ -1046,9 +1039,7 @@
       }
 
       deathOverlay.classList.remove('hidden'); requestAnimationFrame(() => deathOverlay.classList.add('show'));
-      continueBtn.disabled = usedContinueThisRun;
-      continueBtn.textContent = usedContinueThisRun ? 'Continue used' : 'Continue (1x)';
-      quickRetryBtn.classList.remove('hidden');
+      retryBtn.textContent = usedContinueThisRun ? 'Try Again' : 'Continue (1x)';
       autoSaveScoreIfEligible();
 
       challengeBtn.classList.remove('pulseHot');
@@ -1280,9 +1271,10 @@
       onPrimaryInput();
     });
 
-    retryBtn.addEventListener('click', startGame);
-    continueBtn.addEventListener('click', continueRun);
-    quickRetryBtn.addEventListener('click', startGame);
+    retryBtn.addEventListener('click', () => {
+      if (game.state === 'dead' && !usedContinueThisRun) continueRun();
+      else startGame();
+    });
     joinTournamentBtn.addEventListener('click', async () => {
       tourneyScore.value = String(game.score || 0);
       tournamentOverlay.classList.remove('hidden');
