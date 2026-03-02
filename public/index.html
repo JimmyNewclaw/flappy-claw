@@ -263,27 +263,33 @@
       <div class="btnRow">
         <button class="btn btn-primary" id="retryBtn">Continue (1x)</button>
       </div>
-      <div class="btnRow two">
-        <button class="btn btn-secondary" id="shareBtn">Share Score</button>
-        <button class="btn btn-secondary" id="challengeBtn">Challenge a Friend</button>
-      </div>
       <div class="btnRow">
-        <button class="btn btn-primary" id="joinTournamentBtn">🏆 Join Weekly Tournament</button>
+        <button class="btn btn-secondary" id="moreOptionsBtn">More options</button>
       </div>
 
-      <div class="submitWrap">
-        <div class="submitLabel">Submit Score</div>
-        <div class="nameRow">
-          <input id="playerName" class="nameInput" maxlength="20" value="Anonymous" />
-          <button class="btn btn-secondary" id="submitScoreBtn">Submit to Leaderboard</button>
+      <div id="deathSecondary" class="hidden">
+        <div class="btnRow two">
+          <button class="btn btn-secondary" id="shareBtn">Share Score</button>
+          <button class="btn btn-secondary" id="challengeBtn">Challenge a Friend</button>
         </div>
-        <div class="btnRow" style="margin-top:8px;">
-          <button class="btn btn-secondary hidden" id="claimScoreBtn">Claim This Score</button>
+        <div class="btnRow">
+          <button class="btn btn-primary" id="joinTournamentBtn">🏆 Join Weekly Tournament</button>
         </div>
-        <div id="submitStatus" class="statusMini"></div>
-      </div>
 
-      <div class="leaderboard" id="deathLeaderboard"></div>
+        <div class="submitWrap">
+          <div class="submitLabel">Submit Score</div>
+          <div class="nameRow">
+            <input id="playerName" class="nameInput" maxlength="20" value="Anonymous" />
+            <button class="btn btn-secondary" id="submitScoreBtn">Submit to Leaderboard</button>
+          </div>
+          <div class="btnRow" style="margin-top:8px;">
+            <button class="btn btn-secondary hidden" id="claimScoreBtn">Claim This Score</button>
+          </div>
+          <div id="submitStatus" class="statusMini"></div>
+        </div>
+
+        <div class="leaderboard" id="deathLeaderboard"></div>
+      </div>
       <div id="rankStatus" class="statusMini"></div>
       <div id="unlockStatus" class="statusMini"></div>
       <div class="statusMini" style="text-align:center;opacity:.65;margin-top:10px;">flappy-claw.vercel.app 🦞</div>
@@ -328,6 +334,8 @@
     const deathTarget = document.getElementById('deathTarget');
     const deathMsg = document.getElementById('deathMsg');
     const retryBtn = document.getElementById('retryBtn');
+    const moreOptionsBtn = document.getElementById('moreOptionsBtn');
+    const deathSecondary = document.getElementById('deathSecondary');
     const shareBtn = document.getElementById('shareBtn');
     const challengeBtn = document.getElementById('challengeBtn');
     const flashMsg = document.getElementById('flashMsg');
@@ -988,6 +996,8 @@
       pendingClaimScoreId = null;
       challengeBtn.classList.remove('pulseHot');
       challengeBtn.textContent = 'Challenge a Friend';
+      deathSecondary.classList.add('hidden');
+      moreOptionsBtn.textContent = 'More options';
       startOverlay.classList.add('hidden'); deathOverlay.classList.add('hidden'); deathOverlay.classList.remove('show');
     }
 
@@ -1042,6 +1052,8 @@
       }
 
       deathOverlay.classList.remove('hidden'); requestAnimationFrame(() => deathOverlay.classList.add('show'));
+      deathSecondary.classList.add('hidden');
+      moreOptionsBtn.textContent = 'More options';
       challengeGateActive = game.score >= 10 && !usedContinueThisRun;
       retryBtn.textContent = challengeGateActive ? 'Challenge to Unlock Continue' : (usedContinueThisRun ? 'Try Again' : 'Continue (1x)');
       autoSaveScoreIfEligible();
@@ -1288,6 +1300,11 @@
       }
       if (!usedContinueThisRun) continueRun();
       else startGame();
+    });
+
+    moreOptionsBtn.addEventListener('click', () => {
+      deathSecondary.classList.toggle('hidden');
+      moreOptionsBtn.textContent = deathSecondary.classList.contains('hidden') ? 'More options' : 'Hide options';
     });
     joinTournamentBtn.addEventListener('click', async () => {
       tourneyScore.value = String(game.score || 0);
