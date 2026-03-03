@@ -103,6 +103,9 @@
       color: #e8efff;
       text-align: left;
     }
+    .nearMiss { margin-top: 6px; font-size: .86rem; color: #ffd38b; font-weight: 700; }
+    .goalBar { margin-top: 6px; height: 8px; border-radius: 999px; background: rgba(255,255,255,.15); overflow: hidden; }
+    .goalBarFill { height: 100%; width: 0%; background: linear-gradient(90deg,#ffcf4a,#ff8f3f); transition: width .25s ease; }
     .pulseHot { animation: pulseCta 0.9s ease-in-out infinite; }
     .title { margin: 0; font-size: clamp(1.8rem, 7vw, 3rem); font-weight: 900; line-height: 1.05; }
     .subtitle { margin: 7px 0 0; color: var(--muted); font-size: clamp(1rem, 3.2vw, 1.2rem); font-weight: 700; }
@@ -259,6 +262,8 @@
       <p class="desc" id="deathRank" style="margin-top:6px;font-weight:800;">Rank: Intern</p>
       <p class="desc" id="deathTarget" style="margin-top:6px;color:#ffdf7a;font-weight:800;"></p>
       <p class="desc" id="deathMsg" style="margin-top:10px;color:#ffe8b8;"></p>
+      <p class="nearMiss" id="nearMissText"></p>
+      <div class="goalBar"><div class="goalBarFill" id="goalBarFill"></div></div>
 
       <div class="btnRow">
         <button class="btn btn-primary" id="retryBtn">Continue (1x)</button>
@@ -333,6 +338,8 @@
     const deathRank = document.getElementById('deathRank');
     const deathTarget = document.getElementById('deathTarget');
     const deathMsg = document.getElementById('deathMsg');
+    const nearMissText = document.getElementById('nearMissText');
+    const goalBarFill = document.getElementById('goalBarFill');
     const retryBtn = document.getElementById('retryBtn');
     const moreOptionsBtn = document.getElementById('moreOptionsBtn');
     const deathSecondary = document.getElementById('deathSecondary');
@@ -475,6 +482,17 @@
       }
       const target = getMissionTarget();
       missionChip.textContent = `Mission: Beat ${target}`;
+    }
+
+    function updateNearMissUi(score) {
+      const target = getMissionTarget();
+      const nextGoal = Math.max(target, 5);
+      const delta = Math.max(0, nextGoal - score);
+      const pct = Math.max(0, Math.min(100, Math.round((score / nextGoal) * 100)));
+      nearMissText.textContent = delta === 0
+        ? `✅ You hit the ${nextGoal} goal. Push for the next one.`
+        : `${delta} away from your next goal (${nextGoal}).`;
+      goalBarFill.style.width = `${pct}%`;
     }
 
     function completeMissionIfNeeded(score) {
@@ -771,9 +789,13 @@
       const params = new URLSearchParams(window.location.search);
       const c = Number(params.get('challenge') || 0);
       const n = (params.get('name') || '').trim();
+      const ref = (params.get('ref') || '').trim();
       if (c > 0 && n) {
         challengeText.style.display = 'block';
-        challengeText.textContent = `${n} survived ${c} updates. Can you beat them?`;
+        challengeText.textContent = `${n} survived ${c} updates. Beat ${c} to unlock Recruiter progress.`;
+      } else if (ref) {
+        challengeText.style.display = 'block';
+        challengeText.textContent = 'You were invited by a friend. Beat today\'s target to unlock your first Recruiter progress.';
       } else {
         challengeText.style.display = 'none';
       }
@@ -1026,6 +1048,7 @@
       tourneyScore.value = String(game.score);
       updateDailyTargetUi();
       deathMsg.textContent = game.deathMessage;
+      updateNearMissUi(game.score);
       submitStatus.textContent = '';
       rankStatus.textContent = '';
 
@@ -1055,7 +1078,7 @@
       deathSecondary.classList.add('hidden');
       moreOptionsBtn.textContent = 'More options';
       challengeGateActive = game.score >= 10 && !usedContinueThisRun;
-      retryBtn.textContent = challengeGateActive ? 'Challenge to Unlock Continue' : (usedContinueThisRun ? 'Try Again' : 'Continue (1x)');
+      retryBtn.textContent = challengeGateActive ? 'Continue (share to unlock)' : (usedContinueThisRun ? 'Try Again' : 'Continue (1x)');
       autoSaveScoreIfEligible();
 
       challengeBtn.classList.remove('pulseHot');
